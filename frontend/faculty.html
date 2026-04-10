@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Faculty Dashboard - Smart Attendance</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Smart Attendance</h2>
+    <div class="sidebar-content">
+      <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
+      <button class="sidebar-btn" id="viewAttendanceBtn">View Attendance</button>
+      <button class="sidebar-btn" id="timeTableBtn">Time Table</button>
+    </div>
+    <button class="sidebar-btn" id="profileBtn">Profile</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="main-content">
+    <div class="container">
+      <div id="dashboardView">
+        <h3 style="color: #fff; margin-bottom: 20px;">Dashboard</h3>
+        <div class="cards" id="dashboardCards"></div>
+
+        <!-- Active Session Panel (shown when session is active) -->
+        <div id="activeSessionPanel" style="display: none; margin-top: 30px;">
+          <h4 style="color: #fff; margin-bottom: 15px;">🔴 Active Session</h4>
+          <div class="card" style="padding: 20px; text-align: center;">
+            <div id="activeSessionInfo" style="margin-bottom: 15px;"></div>
+            <canvas id="sessionQr" width="200" height="200" style="margin: 0 auto;"></canvas>
+            <br />
+            <!-- Token Display for Manual Entry -->
+            <div style="background: #2d2d2d; padding: 12px 16px; border-radius: 8px; margin: 15px auto; max-width: 350px;">
+              <p style="margin: 0; color: #888; font-size: 0.75rem; text-transform: uppercase;">Token (for manual entry)</p>
+              <p id="sessionTokenDisplay" style="margin: 5px 0 0; font-family: monospace; font-size: 0.95rem; color: #fff; word-break: break-all;"></p>
+              <button id="copySessionTokenBtn" type="button" style="margin-top: 8px; padding: 6px 12px; font-size: 0.75rem; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer;">📋 Copy Token</button>
+            </div>
+            <button id="enlargeQrBtn" type="button" class="small-btn" style="margin-top: 10px;">🔍 Enlarge QR Code</button>
+            <button id="endSessionBtn" type="button" class="small-btn" style="margin-top: 10px; margin-left: 10px; background: #dc3545;">⏹ End Session</button>
+            <button id="saveAttendanceBtn" type="button" class="small-btn" style="margin-top: 10px; margin-left: 10px; background: #28a745; color: #fff;">💾 Save Attendance</button>
+            <div id="live-attendance-summary" style="margin-top: 20px;">
+              <span class="summary-item" style="margin-right: 15px;">✅ Present: <span id="livePresentCount">0</span></span>
+              <span class="summary-item" style="margin-right: 15px;">❌ Absent: <span id="liveAbsentCount">0</span></span>
+              <span class="summary-item">📊 Total: <span id="totalStudentCount">0</span></span>
+            </div>
+            <!-- Manual Attendance Panel (ADD-ONLY - Secondary option below QR) -->
+            <!-- Why here? QR is primary method; manual is fallback for edge cases -->
+            <div id="manualAttendancePanel" style="margin-top: 25px; padding-top: 20px; border-top: 1px dashed #444;">
+              <details id="manualAttendanceDetails">
+                <summary style="cursor: pointer; color: #aaa; font-size: 0.9rem; user-select: none;">
+                  ✋ Manual Attendance <span style="font-size: 0.8rem;">(Only if student cannot scan QR)</span>
+                </summary>
+                <div style="margin-top: 15px; padding: 15px; background: #1a1a2e; border-radius: 8px;">
+                  <p style="font-size: 0.8rem; color: #888; margin-bottom: 10px;">⚠️ Use only when QR scanning fails</p>
+                  <div style="display: flex; gap: 10px; align-items: end; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                      <label style="font-size: 0.8rem; color: #ccc;">Select Student</label>
+                      <select id="manualStudentSelect" style="width: 100%; padding: 8px; margin-top: 5px;">
+                        <option value="">-- Loading students... --</option>
+                      </select>
+                    </div>
+                    <button type="button" id="manualMarkBtn" style="background: #6c757d; padding: 8px 15px; white-space: nowrap;">✅ Mark Present</button>
+                  </div>
+                  <p id="manualAttendanceMsg" style="font-size: 0.85rem; margin-top: 10px;"></p>
+                </div>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div id="todaysClassesView" style="margin-top: 30px;">
+          <h4 style="color: #fff; margin-bottom: 15px;">📅 Today's Classes</h4>
+          <div id="todaysClassesList" class="cards"></div>
+        </div>
+        
+        <div id="myClassesView" style="margin-top: 30px;">
+          <h4 style="color: #fff; margin-bottom: 15px;">📚 My Assigned Classes</h4>
+          <div id="myClassesList" class="card" style="padding: 15px;">
+            <p style="text-align: center; color: #666;">Loading classes...</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="viewAttendanceView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">View Attendance Report</h3>
+        <form id="reportForm" class="grid">
+          <div class="form-group">
+            <label for="reportBranch">Branch</label>
+            <select id="reportBranch" required>
+              <option value="" disabled selected>Select Branch</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportSemester">Semester</label>
+            <select id="reportSemester" required>
+              <option value="" disabled selected>Select Semester</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportSection">Section</label>
+            <select id="reportSection" required>
+              <option value="" disabled selected>Select Section</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportSubject">Subject</label>
+            <select id="reportSubject" required>
+              <option value="" disabled selected>Select Subject</option>
+            </select>
+          </div>
+           <div class="form-group">
+            <label for="reportDate">Date</label>
+            <input type="date" id="reportDate" required>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1; text-align: center; margin-bottom: 40px;">
+            <button type="submit" style="width: auto; padding: 12px 30px;">Load Report</button>
+            <button type="button" id="exportCsvBtn" class="small-btn" style="margin-left: 10px; background: #fff; color: #333;">Export to CSV</button>
+          </div>
+        </form>
+
+        <table id="attendanceReportTable"></table>
+      </div>
+
+      <div id="timeTableView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Your Time Table</h3>
+        <table id="timeTable"></table>
+      </div>
+
+      <div id="profileView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Your Profile</h3>
+        <div class="card" id="profileDetails">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div id="qrModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <div class="modal-body">
+        <div class="modal-qr-section">
+          <canvas id="modalQrCanvas"></canvas>
+          <div class="attendance-summary">
+            <span class="summary-item">Present: <span id="modalPresentCount">0</span></span>
+            <span class="summary-item">Absent: <span id="modalAbsentCount">0</span></span>
+            <span class="summary-item">Total: <span id="modalTotalCount">0</span></span>
+          </div>
+        </div>
+        <div id="modalAttendanceInfo">
+          <h4>Scanned Students</h4>
+          <ul id="scannedStudentsList"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/faculty.js"></script>
+</body>
+</html>

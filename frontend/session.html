@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Active Session - Smart Attendance</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+  <style>
+    /* Full Page Session Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0f172a;
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+    
+    html {
+      overflow: hidden;
+    }
+    
+    /* Top Navigation Bar */
+    .top-bar {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #475569;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 60px;
+    }
+    
+    .top-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(239, 68, 68, 0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #ef4444;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+    
+    .live-indicator span {
+      color: #ef4444;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    
+    .class-name {
+      color: #f1f5f9;
+      font-size: 1.1rem;
+      font-weight: 600;
+      max-width: 400px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .top-bar-right {
+      display: flex;
+      gap: 12px;
+    }
+    
+    .btn-end {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-end:hover {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      transform: translateY(-1px);
+    }
+    
+    .btn-back {
+      background: #475569;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-back:hover {
+      background: #64748b;
+    }
+    
+    /* Main Content Area */
+    .main-content {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      height: calc(100vh - 60px);
+      padding-top: 60px;
+      overflow: hidden;
+    }
+    
+    /* Left Panel - QR & Info */
+    .left-panel {
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border-right: 1px solid #334155;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+    
+    .left-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .left-panel::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    
+    .left-panel::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 2px;
+    }
+    
+    .qr-container {
+      background: white;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+    
+    .qr-container canvas {
+      display: block;
+    }
+    
+    .token-box {
+      background: #334155;
+      padding: 14px;
+      border-radius: 12px;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    
+    .token-label {
+      color: #94a3b8;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+    
+    .token-value {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #f1f5f9;
+      font-weight: 600;
+      word-break: break-all;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: #1e293b;
+      border-radius: 6px;
+    }
+    
+    .copy-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .copy-btn:hover {
+      background: #4f46e5;
+    }
+    
+    .session-details {
+      background: #334155;
+      padding: 14px;
+      border-radius: 12px;
+      width: 100%;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+    }
+    
+    .session-details p {
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      margin: 6px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .session-details strong {
+      color: #f1f5f9;
+      font-size: 0.75rem;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* Live Stats */
+    .live-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    
+    .stat-card {
+      background: #334155;
+      border-radius: 12px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+    
+    .stat-card.present { border-top: 3px solid #22c55e; }
+    .stat-card.absent { border-top: 3px solid #ef4444; }
+    .stat-card.total { border-top: 3px solid #6366f1; }
+    
+    .stat-number {
+      font-size: 1.75rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    
+    .stat-card.present .stat-number { color: #22c55e; }
+    .stat-card.absent .stat-number { color: #ef4444; }
+    .stat-card.total .stat-number { color: #6366f1; }
+    
+    .stat-label {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+    }
+    
+    .expires-warning {
+      color: #f59e0b;
+      font-size: 0.8rem;
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 8px;
+      display: none;
+      width: 100%;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    
+    .expires-warning:not(:empty) {
+      display: block;
+    }
+    
+    /* Recent Attendance Feed */
+    .recent-feed {
+      width: 100%;
+      margin-top: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    
+    .recent-feed-header {
+      color: #94a3b8;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    
+    .recent-feed-header .pulse-dot {
+      width: 6px;
+      height: 6px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .recent-feed-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 4px;
+    }
+    
+    .recent-feed-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    .recent-feed-list::-webkit-scrollbar-track {
+      background: #1e293b;
+      border-radius: 2px;
+    }
+    
+    .recent-feed-list::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 2px;
+    }
+    
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: rgba(34, 197, 94, 0.1);
+      border-left: 3px solid #22c55e;
+      border-radius: 6px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    
+    .feed-item .icon {
+      font-size: 1rem;
+    }
+    
+    .feed-item .details {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .feed-item .name {
+      color: #f1f5f9;
+      font-size: 0.8rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .feed-item .roll {
+      color: #64748b;
+      font-size: 0.65rem;
+    }
+    
+    .feed-item .time {
+      color: #64748b;
+      font-size: 0.65rem;
+      white-space: nowrap;
+    }
+    
+    .feed-empty {
+      color: #64748b;
+      font-size: 0.75rem;
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    /* Right Panel - Students */
+    .right-panel {
+      background: #0f172a;
+      padding: 24px;
+      height: calc(100vh - 60px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .students-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    
+    .students-header h2 {
+      color: #f1f5f9;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+      padding: 8px 14px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #94a3b8;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .filter-tab:hover {
+      border-color: #6366f1;
+      color: #f1f5f9;
+    }
+    
+    .filter-tab.active {
+      background: #6366f1;
+      color: white;
+      border-color: #6366f1;
+    }
+    
+    .students-grid {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 8px;
+    }
+    
+    .students-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .students-grid::-webkit-scrollbar-track {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+    
+    .students-grid::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    
+    .students-grid::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+    
+    .student-card {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid #334155;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    
+    .student-card:hover {
+      border-color: #475569;
+      background: #283548;
+    }
+    
+    .student-info {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .student-info .roll-no {
+      font-weight: 600;
+      color: #f1f5f9;
+      font-size: 0.9rem;
+    }
+    
+    .student-info .name {
+      color: #94a3b8;
+      font-size: 0.8rem;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      min-width: 60px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    
+    .status-badge.present {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .status-badge.absent {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .toggle-btns {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    
+    .toggle-btn {
+      width: 34px;
+      height: 34px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    
+    .toggle-btn.btn-p {
+      background: rgba(34, 197, 94, 0.2);
+      color: #22c55e;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+    }
+    
+    .toggle-btn.btn-p:hover, .toggle-btn.btn-p.active {
+      background: #22c55e;
+      color: white;
+      border-color: #22c55e;
+    }
+    
+    .toggle-btn.btn-a {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .toggle-btn.btn-a:hover, .toggle-btn.btn-a.active {
+      background: #ef4444;
+      color: white;
+      border-color: #ef4444;
+    }
+    
+    .empty-state {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 20px;
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .main-content {
+        grid-template-columns: 350px 1fr;
+      }
+      
+      .qr-container canvas {
+        width: 240px !important;
+        height: 240px !important;
+      }
+    }
+    
+    @media (max-width: 900px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+      
+      .left-panel {
+        position: relative;
+        top: 0;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #334155;
+        padding: 20px;
+      }
+      
+      .qr-container {
+        margin-bottom: 16px;
+      }
+      
+      .qr-container canvas {
+        width: 200px !important;
+        height: 200px !important;
+      }
+      
+      .live-stats {
+        gap: 10px;
+      }
+      
+      .stat-card {
+        padding: 12px 8px;
+      }
+      
+      .stat-number {
+        font-size: 1.5rem;
+      }
+      
+      .right-panel {
+        padding: 20px 16px;
+        min-height: 50vh;
+      }
+      
+      .students-grid {
+        max-height: 400px;
+      }
+      
+      .students-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .students-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    @media (max-width: 600px) {
+      .top-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 16px;
+        height: auto;
+      }
+      
+      .main-content {
+        padding-top: 100px;
+      }
+      
+      .top-bar-left {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      
+      .class-name {
+        font-size: 0.9rem;
+        text-align: center;
+        max-width: 100%;
+      }
+      
+      .top-bar-right {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .top-bar-right button {
+        flex: 1;
+        max-width: 150px;
+      }
+      
+      .left-panel {
+        padding: 16px;
+      }
+      
+      .token-value {
+        font-size: 0.75rem;
+      }
+      
+      .filter-tabs {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      
+      .filter-tab {
+        padding: 6px 12px;
+        font-size: 0.7rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="live-indicator">
+        <div class="live-dot"></div>
+        <span>LIVE</span>
+      </div>
+      <div class="class-name" id="className">Loading...</div>
+    </div>
+    <div class="top-bar-right">
+      <button class="btn-back" id="backBtn">← Back</button>
+      <button class="btn-end" id="endSessionBtn">⏹ End Session</button>
+    </div>
+  </div>
+  
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Left Panel - QR & Stats -->
+    <div class="left-panel">
+      <div class="qr-container">
+        <canvas id="qrCanvas" width="280" height="280"></canvas>
+      </div>
+      
+      <div class="token-box">
+        <div class="token-label">Session Token</div>
+        <div class="token-value" id="tokenDisplay"></div>
+        <button class="copy-btn" id="copyTokenBtn">📋 Copy Token</button>
+      </div>
+      
+      <div class="session-details">
+        <p><span>Session ID:</span> <strong id="sessionId">-</strong></p>
+        <p><span>Expires at:</span> <strong id="expiresAt">-</strong></p>
+      </div>
+      
+      <div class="live-stats">
+        <div class="stat-card present">
+          <div class="stat-number" id="presentCount">0</div>
+          <div class="stat-label">Present</div>
+        </div>
+        <div class="stat-card absent">
+          <div class="stat-number" id="absentCount">0</div>
+          <div class="stat-label">Absent</div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+      
+      <p class="expires-warning" id="expiresWarning"></p>
+      
+      <!-- Recent Attendance Feed -->
+      <div class="recent-feed">
+        <div class="recent-feed-header">
+          <div class="pulse-dot"></div>
+          <span>Live Attendance Feed</span>
+        </div>
+        <div class="recent-feed-list" id="recentFeedList">
+          <div class="feed-empty">Waiting for students to mark attendance...</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Right Panel - Students List -->
+    <div class="right-panel">
+      <div class="students-header">
+        <h2>📋 Student Attendance</h2>
+        <div class="filter-tabs" id="filterTabs">
+          <!-- Filter tabs will be injected by JS -->
+        </div>
+      </div>
+      <div class="students-grid" id="studentsList">
+        <div class="empty-state">Loading students...</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { apiGet, apiPost, ensureAuth } from "./assets/js/api.js";
+    
+    ensureAuth(["faculty"]);
+    
+    // Get session data from URL or localStorage
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('sessionId') || localStorage.getItem('currentSessionId');
+    const qrToken = params.get('qrToken') || localStorage.getItem('currentQrToken');
+    const className = params.get('className') || localStorage.getItem('currentClassName') || 'Active Session';
+    const expiresAt = params.get('expiresAt') || localStorage.getItem('currentExpiresAt');
+    
+    if (!sessionId || !qrToken) {
+      alert('No active session found');
+      window.location.href = 'faculty.html';
+    }
+    
+    // Display session info
+    document.getElementById('className').textContent = decodeURIComponent(className);
+    document.getElementById('sessionId').textContent = sessionId;
+    document.getElementById('expiresAt').textContent = expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-';
+    
+    // Generate QR Code
+    new QRious({
+      element: document.getElementById('qrCanvas'),
+      value: qrToken,
+      size: 280,
+      level: 'H'
+    });
+    
+    // Display token for manual entry
+    document.getElementById('tokenDisplay').textContent = qrToken;
+    
+    // Copy token button
+    document.getElementById('copyTokenBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(qrToken).then(() => {
+        const btn = document.getElementById('copyTokenBtn');
+        btn.textContent = '✅ Copied!';
+        setTimeout(() => { btn.textContent = '📋 Copy Token'; }, 2000);
+      }).catch(err => {
+        alert('Failed to copy. Token: ' + qrToken);
+      });
+    });
+    
+    // Update expiry warning
+    function updateExpiryWarning() {
+      if (!expiresAt) return;
+      const now = new Date();
+      const expiry = new Date(expiresAt);
+      const diff = expiry - now;
+      
+      if (diff <= 0) {
+        document.getElementById('expiresWarning').textContent = '⚠️ Session has expired!';
+        document.getElementById('expiresWarning').style.color = '#dc3545';
+      } else if (diff < 5 * 60 * 1000) {
+        const mins = Math.floor(diff / 60000);
+        document.getElementById('expiresWarning').textContent = `⚠️ Expires in ${mins} minute(s)`;
+      }
+    }
+    updateExpiryWarning();
+    setInterval(updateExpiryWarning, 30000);
+    
+    // Load students for attendance management
+    let allStudents = [];
+    let currentFilter = 'all';
+    
+    async function loadStudents() {
+      try {
+        const data = await apiGet(`/faculty/session/${sessionId}/students`);
+        allStudents = data.students;
+        
+        // Update counts
+        document.getElementById('presentCount').textContent = data.presentCount || 0;
+        document.getElementById('absentCount').textContent = data.absentCount || 0;
+        document.getElementById('totalCount').textContent = data.totalStudents;
+        
+        renderStudentList();
+      } catch (err) {
+        console.error('Error loading students:', err);
+        document.getElementById('studentsList').innerHTML = '<p style="color: #dc3545; padding: 16px;">Error loading students</p>';
+      }
+    }
+    
+    function renderStudentList() {
+      const container = document.getElementById('studentsList');
+      const filterTabsContainer = document.getElementById('filterTabs');
+      
+      // Filter students based on current filter
+      let filteredStudents = allStudents;
+      if (currentFilter === 'present') {
+        filteredStudents = allStudents.filter(s => s.status === 'present');
+      } else if (currentFilter === 'absent') {
+        filteredStudents = allStudents.filter(s => s.status === 'absent');
+      }
+      
+      if (allStudents.length === 0) {
+        container.innerHTML = '<div class="empty-state">No students found</div>';
+        filterTabsContainer.innerHTML = '';
+        return;
+      }
+      
+      // Build filter tabs
+      const presentCount = allStudents.filter(s => s.status === 'present').length;
+      const absentCount = allStudents.filter(s => s.status === 'absent').length;
+      
+      filterTabsContainer.innerHTML = `
+        <button class="filter-tab ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">All (${allStudents.length})</button>
+        <button class="filter-tab ${currentFilter === 'present' ? 'active' : ''}" data-filter="present">Present (${presentCount})</button>
+        <button class="filter-tab ${currentFilter === 'absent' ? 'active' : ''}" data-filter="absent">Absent (${absentCount})</button>
+      `;
+      
+      // Add filter tab listeners
+      filterTabsContainer.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          currentFilter = tab.dataset.filter;
+          renderStudentList();
+        });
+      });
+      
+      if (filteredStudents.length === 0) {
+        container.innerHTML = '<div class="empty-state">No students in this category</div>';
+      } else {
+        container.innerHTML = filteredStudents.map(s => `
+          <div class="student-card" data-student-id="${s.id}">
+            <div class="student-info">
+              <div class="roll-no">${s.rollNo || 'N/A'}</div>
+              <div class="name">${s.name}</div>
+            </div>
+            <span class="status-badge ${s.status}">${s.status}</span>
+            <div class="toggle-btns">
+              <button class="toggle-btn btn-p ${s.status === 'present' ? 'active' : ''}" data-student-id="${s.id}" data-status="present" title="Mark Present">P</button>
+              <button class="toggle-btn btn-a ${s.status === 'absent' ? 'active' : ''}" data-student-id="${s.id}" data-status="absent" title="Mark Absent">A</button>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // Add toggle button listeners
+      container.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const studentId = btn.dataset.studentId;
+          const newStatus = btn.dataset.status;
+          
+          try {
+            btn.disabled = true;
+            const result = await apiPost('/faculty/manual-attendance', {
+              sessionId,
+              studentId,
+              status: newStatus
+            });
+            
+            // Update local data
+            const student = allStudents.find(s => s.id === studentId);
+            if (student) {
+              student.status = newStatus;
+              student.alreadyMarked = true;
+            }
+            
+            // Update counts
+            const presentCount = allStudents.filter(s => s.status === 'present').length;
+            const absentCount = allStudents.filter(s => s.status === 'absent').length;
+            document.getElementById('presentCount').textContent = presentCount;
+            document.getElementById('absentCount').textContent = absentCount;
+            
+            // Re-render
+            renderStudentList();
+          } catch (err) {
+            console.error('Error updating attendance:', err);
+            alert('Failed to update: ' + (err.message || 'Unknown error'));
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+    }
+    
+    loadStudents();
+    
+    // Track students who mark attendance (for live feed)
+    let previousPresentStudents = new Set();
+    let recentAttendance = []; // Store recent attendance marks with timestamps
+    
+    function updateLiveFeed() {
+      const feedList = document.getElementById('recentFeedList');
+      
+      // Find newly present students
+      const currentPresentStudents = allStudents.filter(s => s.status === 'present');
+      
+      currentPresentStudents.forEach(student => {
+        if (!previousPresentStudents.has(student.id)) {
+          // This student just marked attendance
+          recentAttendance.unshift({
+            id: student.id,
+            name: student.name,
+            rollNo: student.rollNo,
+            time: new Date()
+          });
+        }
+      });
+      
+      // Keep only last 20 entries
+      recentAttendance = recentAttendance.slice(0, 20);
+      
+      // Update the previous set
+      previousPresentStudents = new Set(currentPresentStudents.map(s => s.id));
+      
+      // Render feed
+      if (recentAttendance.length === 0) {
+        feedList.innerHTML = '<div class="feed-empty">Waiting for students to mark attendance...</div>';
+      } else {
+        feedList.innerHTML = recentAttendance.map(item => {
+          const timeStr = item.time.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+          });
+          return `
+            <div class="feed-item">
+              <span class="icon">✅</span>
+              <div class="details">
+                <div class="name">${item.name}</div>
+                <div class="roll">${item.rollNo || 'N/A'}</div>
+              </div>
+              <div class="time">${timeStr}</div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+    
+    // Initialize the feed with existing present students
+    async function initializeFeed() {
+      // Wait for first load
+      await loadStudents();
+      
+      // Mark all current present students as already known
+      const currentPresentStudents = allStudents.filter(s => s.status === 'present');
+      previousPresentStudents = new Set(currentPresentStudents.map(s => s.id));
+      
+      // Show them in feed (without animation effect for existing ones)
+      currentPresentStudents.forEach(student => {
+        recentAttendance.push({
+          id: student.id,
+          name: student.name,
+          rollNo: student.rollNo,
+          time: new Date() // We don't have actual time, so use current
+        });
+      });
+      
+      // Limit and render
+      recentAttendance = recentAttendance.slice(0, 20);
+      updateLiveFeed();
+    }
+    
+    // Refresh and check for new attendance
+    async function refreshAndUpdate() {
+      await loadStudents();
+      updateLiveFeed();
+    }
+    
+    // Initialize
+    initializeFeed();
+    
+    // Refresh counts every 10 seconds (faster for live updates)
+    setInterval(refreshAndUpdate, 10000);
+    
+    // End session button
+    document.getElementById('endSessionBtn').addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to end this session?')) return;
+      
+      try {
+        await apiPost(`/faculty/end-session/${sessionId}`);
+        localStorage.removeItem('currentSessionId');
+        localStorage.removeItem('currentQrToken');
+        localStorage.removeItem('currentClassName');
+        localStorage.removeItem('currentExpiresAt');
+        alert('Session ended successfully!');
+        window.location.href = 'faculty.html';
+      } catch (err) {
+        alert('Failed to end session: ' + (err.message || 'Unknown error'));
+      }
+    });
+    
+    // Back button
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'faculty.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Smart Attendance</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Smart Attendance</h2>
+    <div class="sidebar-content">
+      <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
+      <button class="sidebar-btn" id="createUserBtn">Manage Users</button>
+      <button class="sidebar-btn" id="departmentsBtn">Manage Departments</button>
+      <button class="sidebar-btn" id="sectionsBtn">Manage Sections</button>
+      <button class="sidebar-btn" id="coursesBtn">Manage Courses</button>
+      <button class="sidebar-btn" id="timetableBtn">Manage Timetable</button>
+      <button class="sidebar-btn" id="promoteBtn">Promote Students</button>
+      <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
+    </div>
+    <button class="sidebar-btn" id="profileBtn">Profile</button>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="main-content">
+    <div class="container">
+      <div id="dashboardView">
+        <h3 style="color: #fff; margin-bottom: 20px;">📊 Admin Dashboard</h3>
+        
+        <!-- Welcome Banner -->
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h2 style="margin: 0; color: #fff;">Welcome, <span id="adminNameDisplay">Admin</span>!</h2>
+              <p style="color: rgba(255,255,255,0.8); margin-top: 5px;">Smart Attendance Management System</p>
+            </div>
+            <div style="text-align: right; color: rgba(255,255,255,0.9);">
+              <p style="margin: 0; font-size: 0.9rem;" id="currentDate"></p>
+              <p style="margin: 0; font-size: 0.85rem;" id="currentTime"></p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Main Stats Cards -->
+        <div class="cards" id="adminStats" style="margin-bottom: 20px;"></div>
+        
+        <!-- Quick Actions & Overview Row -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+          
+          <!-- Quick Actions -->
+          <div class="card">
+            <h4 style="margin-bottom: 15px;">⚡ Quick Actions</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <button onclick="switchView('createUser')" style="padding: 12px; background: #17a2b8;">👥 Manage Users</button>
+              <button onclick="switchView('departments')" style="padding: 12px; background: #6f42c1;">🏢 Departments</button>
+              <button onclick="switchView('sections')" style="padding: 12px; background: #fd7e14;">📚 Sections</button>
+              <button onclick="switchView('courses')" style="padding: 12px; background: #20c997;">📖 Courses</button>
+              <button onclick="switchView('timetable')" style="padding: 12px; background: #e83e8c;">📅 Timetable</button>
+              <button onclick="switchView('promote')" style="padding: 12px; background: #28a745;">📈 Promote</button>
+            </div>
+          </div>
+          
+          <!-- Semester Distribution -->
+          <div class="card">
+            <h4 style="margin-bottom: 15px;">📊 Students by Semester</h4>
+            <div id="semesterDistribution" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+              <p style="color: #888; grid-column: span 4; text-align: center;">Loading...</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Department Overview & Recent Activity -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          
+          <!-- Department Overview -->
+          <div class="card">
+            <h4 style="margin-bottom: 15px;">🏢 Department Overview</h4>
+            <div id="departmentOverview" style="max-height: 200px; overflow-y: auto;">
+              <p style="color: #888; text-align: center;">Loading...</p>
+            </div>
+          </div>
+          
+          <!-- System Summary -->
+          <div class="card">
+            <h4 style="margin-bottom: 15px;">📋 System Summary</h4>
+            <div id="systemSummary">
+              <p style="color: #888; text-align: center;">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="createUserView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Users</h3>
+        
+        <!-- Faculty Section -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4>👨‍🏫 Faculty Management</h4>
+          </div>
+          <form id="createFacultyForm" style="margin-top: 15px;">
+            <input type="hidden" id="cfEditId" value="" />
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+              <div class="form-group">
+                <label>Name</label>
+                <input id="cfName" required />
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input id="cfEmail" type="email" required />
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input id="cfPassword" type="password" placeholder="Leave empty to keep unchanged" />
+              </div>
+              <div class="form-group">
+                <label>Department</label>
+                <select id="cfDepartment" required>
+                  <option value="">Select Department</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+              <button type="submit" id="cfSubmitBtn">Add Faculty</button>
+              <button type="button" id="cfCancelBtn" style="background: #6c757d; display: none;">Cancel Edit</button>
+            </div>
+            <p id="cfMsg" class="error-msg"></p>
+          </form>
+          
+          <!-- Faculty List -->
+          <div style="margin-top: 20px;">
+            <h5>Faculty List</h5>
+            <div style="max-height: 300px; overflow-y: auto;">
+              <table style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="facultyListBody">
+                  <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Student Section -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4>👨‍🎓 Student Management</h4>
+          </div>
+          <!-- Two-Step Flow: 
+               Step 1 (Create): Name, Email, Password only (required)
+               Step 2 (Edit): Assign Department, Semester, Section -->
+          <form id="createStudentForm" style="margin-top: 15px;">
+            <input type="hidden" id="csEditId" value="" />
+            
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+              <div class="form-group">
+                <label>Name <span style="color: #dc3545;">*</span></label>
+                <input id="csName" required />
+              </div>
+              <div class="form-group">
+                <label>Email <span style="color: #dc3545;">*</span></label>
+                <input id="csEmail" type="email" required />
+              </div>
+              <div class="form-group">
+                <label>Password <span id="pwdRequired" style="color: #dc3545;">*</span></label>
+                <input id="csPassword" type="password" placeholder="Required for new student" />
+              </div>
+              
+              <!-- Step 2: Academic Details (Optional at creation, assign during edit) -->
+              <div class="form-group">
+                <label>Department <span style="color: #888; font-size: 0.8rem;">(assign later)</span></label>
+                <select id="csDepartment">
+                  <option value="">-- Not Assigned --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Section <span style="color: #888; font-size: 0.8rem;">(assign later)</span></label>
+                <select id="csSection">
+                  <option value="">-- Not Assigned --</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Semester</label>
+                <select id="csSemester">
+                  <option value="1">1st Semester</option>
+                  <option value="2">2nd Semester</option>
+                  <option value="3">3rd Semester</option>
+                  <option value="4">4th Semester</option>
+                  <option value="5">5th Semester</option>
+                  <option value="6">6th Semester</option>
+                  <option value="7">7th Semester</option>
+                  <option value="8">8th Semester</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Admission Year</label>
+                <input id="csAdmissionYear" type="number" min="2000" max="2100" placeholder="e.g., 2024" />
+              </div>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+              <button type="submit" id="csSubmitBtn">Add Student</button>
+              <button type="button" id="csCancelBtn" style="background: #6c757d; display: none;">Cancel Edit</button>
+            </div>
+            <p id="csMsg" class="error-msg"></p>
+          </form>
+          
+          <!-- Student Filter and List -->
+          <div style="margin-top: 20px;">
+            <h5>Student List</h5>
+            <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 15px;">
+              <select id="studentFilterDept">
+                <option value="">All Departments</option>
+              </select>
+              <select id="studentFilterSection">
+                <option value="">All Sections</option>
+              </select>
+              <button type="button" id="filterStudentsBtn">Filter</button>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+              <table style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>Roll No</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Dept</th>
+                    <th>Section</th>
+                    <th>Sem</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="studentListBody">
+                  <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Promote Students View -->
+      <div id="promoteView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">📈 Promote Students</h3>
+        
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>🔄 Group Promotion</h4>
+          <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Promote all students matching the filter criteria</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 15px; align-items: end;">
+            <div class="form-group">
+              <label>Department</label>
+              <select id="promoteFilterDept">
+                <option value="">All Departments</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Section</label>
+              <select id="promoteFilterSection">
+                <option value="">All Sections</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Current Semester</label>
+              <select id="promoteFromSem">
+                <option value="">All Semesters</option>
+                <option value="1">1st Semester</option>
+                <option value="2">2nd Semester</option>
+                <option value="3">3rd Semester</option>
+                <option value="4">4th Semester</option>
+                <option value="5">5th Semester</option>
+                <option value="6">6th Semester</option>
+                <option value="7">7th Semester</option>
+                <option value="8">8th Semester</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Promote To</label>
+              <select id="promoteToSem" required>
+                <option value="">Select Target</option>
+                <option value="next">Next Semester (+1)</option>
+                <option value="1">1st Semester</option>
+                <option value="2">2nd Semester</option>
+                <option value="3">3rd Semester</option>
+                <option value="4">4th Semester</option>
+                <option value="5">5th Semester</option>
+                <option value="6">6th Semester</option>
+                <option value="7">7th Semester</option>
+                <option value="8">8th Semester</option>
+              </select>
+            </div>
+            <button type="button" id="promoteGroupBtn" style="background: #28a745;">Promote Group</button>
+          </div>
+          <p id="promoteGroupMsg" class="error-msg" style="margin-top: 10px;"></p>
+        </div>
+        
+        <div class="card">
+          <h4>👤 Individual Promotion</h4>
+          <p style="color: #888; font-size: 0.85rem; margin-bottom: 15px;">Select specific students to change their semester</p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-bottom: 15px;">
+            <div class="form-group">
+              <label>Filter by Department</label>
+              <select id="individualFilterDept">
+                <option value="">All Departments</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Filter by Semester</label>
+              <select id="individualFilterSem">
+                <option value="">All Semesters</option>
+                <option value="1">1st Semester</option>
+                <option value="2">2nd Semester</option>
+                <option value="3">3rd Semester</option>
+                <option value="4">4th Semester</option>
+                <option value="5">5th Semester</option>
+                <option value="6">6th Semester</option>
+                <option value="7">7th Semester</option>
+                <option value="8">8th Semester</option>
+              </select>
+            </div>
+            <button type="button" id="loadPromoteListBtn">Load Students</button>
+          </div>
+          
+          <div style="max-height: 350px; overflow-y: auto;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th><input type="checkbox" id="selectAllPromote" title="Select All" /></th>
+                  <th>Roll No</th>
+                  <th>Name</th>
+                  <th>Dept</th>
+                  <th>Current Sem</th>
+                  <th>New Semester</th>
+                </tr>
+              </thead>
+              <tbody id="promoteStudentListBody">
+                <tr><td colspan="6" style="text-align: center;">Click "Load Students" to view</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+            <button type="button" id="promoteSelectedBtn" style="background: #28a745;">Promote Selected</button>
+            <span id="selectedCount" style="color: #888; font-size: 0.85rem;">0 students selected</span>
+          </div>
+          <p id="promoteIndividualMsg" class="error-msg" style="margin-top: 10px;"></p>
+        </div>
+      </div>
+      
+      <!-- Department Management View -->
+      <div id="departmentsView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Departments</h3>
+        
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>➕ Create Department</h4>
+          <form id="createDepartmentForm" style="display: grid; grid-template-columns: 2fr 1fr 2fr auto; gap: 15px; margin-top: 15px; align-items: end;">
+            <div class="form-group">
+              <label>Department Name</label>
+              <input type="text" id="deptName" placeholder="e.g., Computer Science & Engineering" required />
+            </div>
+            <div class="form-group">
+              <label>Code</label>
+              <input type="text" id="deptCode" placeholder="e.g., CSE" maxlength="10" required style="text-transform: uppercase;" />
+            </div>
+            <div class="form-group">
+              <label>Description (Optional)</label>
+              <input type="text" id="deptDescription" placeholder="e.g., Main engineering department" />
+            </div>
+            <button type="submit">Add Department</button>
+          </form>
+          <p id="deptMsg" class="error-msg"></p>
+        </div>
+        
+        <div class="card">
+          <h4>📋 Department List</h4>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Department Name</th>
+                  <th>Code</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="departmentListBody">
+                <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Section Management View -->
+      <div id="sectionsView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Sections</h3>
+        
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>➕ Create Section</h4>
+          <form id="createSectionForm" style="display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 15px; margin-top: 15px; align-items: end;">
+            <div class="form-group">
+              <label>Department</label>
+              <select id="secDepartment" required>
+                <option value="">Select Department</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Section Name</label>
+              <input type="text" id="secName" placeholder="e.g., A1, A2, B1" required />
+            </div>
+            <div class="form-group">
+              <label>Description (Optional)</label>
+              <input type="text" id="secDescription" placeholder="e.g., Morning Batch" />
+            </div>
+            <button type="submit">Add Section</button>
+          </form>
+          <p id="secMsg" class="error-msg"></p>
+        </div>
+        
+        <div class="card">
+          <h4>📋 Section List</h4>
+          <div style="margin: 15px 0;">
+            <select id="sectionFilterDept" style="padding: 8px; min-width: 200px;">
+              <option value="">All Departments</option>
+            </select>
+          </div>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Section</th>
+                  <th>Department</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="sectionListBody">
+                <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Course Management View -->
+      <div id="coursesView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Courses</h3>
+        
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>➕ Create Course</h4>
+          <form id="createCourseForm" style="margin-top: 15px;">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+              <div class="form-group">
+                <label>Department</label>
+                <select id="courseDepartment" required>
+                  <option value="">Select Department</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Semester</label>
+                <select id="courseSemester" required>
+                  <option value="">Select Semester</option>
+                  <option value="1">Semester 1</option>
+                  <option value="2">Semester 2</option>
+                  <option value="3">Semester 3</option>
+                  <option value="4">Semester 4</option>
+                  <option value="5">Semester 5</option>
+                  <option value="6">Semester 6</option>
+                  <option value="7">Semester 7</option>
+                  <option value="8">Semester 8</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Course Code</label>
+                <input type="text" id="courseCode" placeholder="e.g., CS101" required style="text-transform: uppercase;" />
+              </div>
+              <div class="form-group">
+                <label>Course Name</label>
+                <input type="text" id="courseName" placeholder="e.g., Data Structures" required />
+              </div>
+              <div class="form-group">
+                <label>Credits</label>
+                <input type="number" id="courseCredits" min="1" max="6" value="3" />
+              </div>
+              <div class="form-group">
+                <label>Description (Optional)</label>
+                <input type="text" id="courseDescription" placeholder="Brief description" />
+              </div>
+            </div>
+            <div style="margin-top: 15px;">
+              <button type="submit">Add Course</button>
+            </div>
+          </form>
+          <p id="courseMsg" class="error-msg"></p>
+        </div>
+        
+        <div class="card">
+          <h4>📋 Course List</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin: 15px 0;">
+            <select id="courseFilterDept" style="padding: 8px;">
+              <option value="">All Departments</option>
+            </select>
+            <select id="courseFilterSem" style="padding: 8px;">
+              <option value="">All Semesters</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5">Semester 5</option>
+              <option value="6">Semester 6</option>
+              <option value="7">Semester 7</option>
+              <option value="8">Semester 8</option>
+            </select>
+            <button type="button" id="filterCoursesBtn">Filter</button>
+          </div>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Course Name</th>
+                  <th>Department</th>
+                  <th>Semester</th>
+                  <th>Credits</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="courseListBody">
+                <tr><td colspan="6" style="text-align: center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="timetableView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Weekly Schedule</h3>
+        
+        <!-- Select Faculty -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>Select Faculty</h4>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; margin-top: 15px;">
+            <div class="form-group">
+              <label>Filter by Department</label>
+              <select id="ttDepartmentFilter">
+                <option value="">All Departments</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Faculty</label>
+              <select id="ttFaculty" required>
+                <option value="">Select Faculty</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Faculty Info</label>
+              <input id="ttFacultyInfo" readonly style="background: #e9ecef;" placeholder="Select a faculty member" />
+            </div>
+            <div class="form-group" style="align-self: end;">
+              <button type="button" id="loadFacultyScheduleBtn">Load Schedule</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Add Slot Form -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h4>Add Class to Schedule</h4>
+          <form id="addSlotForm" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 15px;">
+            <div class="form-group">
+              <label>Day</label>
+              <select id="slotDay" required>
+                <option value="monday">Monday</option>
+                <option value="tuesday">Tuesday</option>
+                <option value="wednesday">Wednesday</option>
+                <option value="thursday">Thursday</option>
+                <option value="friday">Friday</option>
+                <option value="saturday">Saturday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Start Time</label>
+              <input type="time" id="slotStart" required />
+            </div>
+            <div class="form-group">
+              <label>End Time</label>
+              <input type="time" id="slotEnd" required />
+            </div>
+            <div class="form-group">
+              <label>Course (Faculty's Classes)</label>
+              <select id="slotCourse" required>
+                <option value="">Select Course</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Section</label>
+              <select id="slotSection">
+                <option value="">Select Section</option>
+              </select>
+            </div>
+          </form>
+          <div style="margin-top: 15px;">
+            <button type="button" id="addSlotBtn">Add to Schedule</button>
+          </div>
+          <p id="slotMsg" class="error-msg"></p>
+        </div>
+        
+        <!-- Weekly Schedule Display -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4>Faculty Weekly Schedule</h4>
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <span id="scheduleStatus" style="font-size: 0.85rem; color: #28a745;"></span>
+              <button type="button" id="saveScheduleBtn" style="background: #28a745;">💾 Save Schedule</button>
+            </div>
+          </div>
+          <div style="overflow-x: auto; margin-top: 15px;">
+            <table id="adminTimetable" style="width: 100%; min-width: 800px;">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Monday</th>
+                  <th>Tuesday</th>
+                  <th>Wednesday</th>
+                  <th>Thursday</th>
+                  <th>Friday</th>
+                  <th>Saturday</th>
+                </tr>
+              </thead>
+              <tbody id="adminTimetableBody">
+                <tr><td colspan="7" style="text-align: center; color: #666;">Select a faculty to view schedule</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="promoteView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Promote Students to Next Semester</h3>
+        <div class="card">
+          <form id="promoteForm">
+            <div class="form-group">
+              <label>Department</label>
+              <select id="prDepartment">
+                <option value="">All Departments</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
+                <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>From Semester</label>
+              <select id="prFromSemester" required>
+                <option value="">Select Semester</option>
+                <option value="1">Semester 1 → 2</option>
+                <option value="2">Semester 2 → 3</option>
+                <option value="3">Semester 3 → 4</option>
+                <option value="4">Semester 4 → 5</option>
+                <option value="5">Semester 5 → 6</option>
+                <option value="6">Semester 6 → 7</option>
+                <option value="7">Semester 7 → 8</option>
+                <option value="8">Semester 8 → Graduate</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Section</label>
+              <select id="prSection">
+                <option value="">All Sections</option>
+                <option value="A">Section A</option>
+                <option value="B">Section B</option>
+              </select>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button type="button" id="previewPromotionBtn" style="background: #6c757d;">Preview</button>
+              <button type="submit">Promote Students</button>
+            </div>
+            <p id="prMsg" class="error-msg"></p>
+          </form>
+        </div>
+
+        <div id="promotionPreview" style="display: none; margin-top: 20px;">
+          <h4 style="color: #fff; margin-bottom: 10px;">Students to be Promoted (<span id="previewCount">0</span>)</h4>
+          <div class="card" style="max-height: 400px; overflow-y: auto;">
+            <table id="previewTable" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Department</th>
+                  <th>Current Sem</th>
+                  <th>Section</th>
+                </tr>
+              </thead>
+              <tbody id="previewTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="analyticsView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Analytics</h3>
+        <form id="analyticsForm" class="grid">
+          <div class="form-group">
+            <label>Department</label>
+            <select id="anDepartment">
+                <option value="">All</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Information Technology">Information Technology</option>
+                <option value="Electronics & Communication Engineering">Electronics & Communication Engineering</option>
+                <option value="Electrical & Electronics Engineering">Electrical & Electronics Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Semester</label>
+            <select id="anSemester">
+                <option value="">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Section</label>
+            <select id="anSection">
+                <option value="">All</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Course Name</label>
+            <select id="anCourseName">
+                <option value="">All</option>
+                <option value="Intro to CS">Intro to CS</option>
+                <option value="Analog Circuits">Analog Circuits</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1; text-align: center;">
+            <button type="submit" style="width: auto; padding: 12px 30px;">Load Report</button>
+            <button type="button" id="exportCsvBtn" class="small-btn" style="margin-left: 10px; background: #fff; color: #333;">Export CSV</button>
+          </div>
+        </form>
+        <canvas id="adminChart" style="max-width:600px; margin-top:20px;"></canvas>
+        <table id="analyticsTable" style="margin-top:20px;"></table>
+      </div>
+
+      <div id="profileView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Your Profile</h3>
+        <div class="card" id="profileDetails">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/admin.js"></script>
+</body>
+</html>
