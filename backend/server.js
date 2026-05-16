@@ -5,6 +5,7 @@ import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Server as SocketIOServer } from "socket.io";
+import bcrypt from "bcryptjs";
 
 import { connectDB } from "./config/db.js";
 import { env } from "./config/env.js";
@@ -14,6 +15,7 @@ import facultyRoutes from "./routes/facultyRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import mlRoutes from "./routes/mlRoutes.js";
+import { User } from "./models/User.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { verifyToken } from "./utils/jwt.js";
 
@@ -101,16 +103,35 @@ io.on("connection", (socket) => {
 // ---- START SERVER ----
 const PORT = process.env.PORT || env.PORT;
 
-connectDB()
-  .then(() => {
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("Failed to start server:", err.message);
-    process.exit(1);
+const ensureDefaultAdmin = async () => {
+  const existingAdmin = await User.findOne({ role: "admin" });
+  if (existingAdmin) {
+    console.log(`Admin account already exists: ${existingAdmin.email}`);
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(env.DEFAULT_ADMIN_PASSWORD, 10);
+  await User.create({
+    name: env.DEFAULT_ADMIN_NAME,
+    email: env.DEFAULT_ADMIN_EMAIL.toLowerCase(),
+    passwordHash,
+    role: "admin"
   });
+  console.log(`Default admin created: ${env.DEFAULT_ADMIN_EMAIL}`);
+};
+
+const startServer = async () => {
+  await connectDB();
+  await ensureDefaultAdmin();
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+};
+
+startServer().catch((err) => {
+  console.error("Failed to start server:", err.message);
+  process.exit(1);
+});
 
 // Global error handlers to prevent crashes
 process.on("unhandledRejection", (reason, promise) => {
