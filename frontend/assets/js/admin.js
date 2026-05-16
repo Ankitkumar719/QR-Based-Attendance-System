@@ -1207,7 +1207,7 @@ exportCsvBtn.addEventListener("click", () => {
   if (sec) params.append("section", sec);
   if (name) params.append("courseName", name);
 
-  window.open(`http://localhost:5000/analytics/export?${params.toString()}`);
+  window.open(`https://your-backend.onrender.com/analytics/export?${params.toString()}`);
 });
 
 function renderAnalytics(report) {
