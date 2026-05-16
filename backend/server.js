@@ -13,6 +13,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import facultyRoutes from "./routes/facultyRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import mlRoutes from "./routes/mlRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 import { verifyToken } from "./utils/jwt.js";
 
@@ -44,6 +45,7 @@ app.use("/admin", adminRoutes);
 app.use("/faculty", facultyRoutes);
 app.use("/student", studentRoutes);
 app.use("/analytics", analyticsRoutes);
+app.use("/ml", mlRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

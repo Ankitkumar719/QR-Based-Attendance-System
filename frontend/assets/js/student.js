@@ -20,6 +20,11 @@ const timeTable = document.getElementById("timeTable");
 const activeSessionsList = document.getElementById("activeSessionsList");
 const activeSessionBanner = document.getElementById("activeSessionBanner");
 const activeSessionBannerText = document.getElementById("activeSessionBannerText");
+const chatBtn = document.getElementById("chatBtn");
+const chatView = document.getElementById("chatView");
+const chatMessages = document.getElementById("chatMessages");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
 
 document.getElementById('studentDate').valueAsDate = new Date();
 
@@ -54,19 +59,25 @@ function updateWelcomeBanner() {
 const dashboardBtn = document.getElementById("dashboardBtn");
 const markAttendanceBtn = document.getElementById("markAttendanceBtn");
 const viewAttendanceBtn = document.getElementById("viewAttendanceBtn");
+const analyticsBtn = document.getElementById("analyticsBtn");
 const timeTableBtn = document.getElementById("timeTableBtn");
 const profileBtn = document.getElementById("profileBtn");
+const chatBtn = document.getElementById("chatBtn");
 const dashboardView = document.getElementById("dashboardView");
 const markAttendanceView = document.getElementById("markAttendanceView");
 const viewAttendanceView = document.getElementById("viewAttendanceView");
+const analyticsView = document.getElementById("analyticsView");
 const timeTableView = document.getElementById("timeTableView");
 const profileView = document.getElementById("profileView");
+const chatView = document.getElementById("chatView");
 
 dashboardBtn.addEventListener("click", () => switchView("dashboard"));
 markAttendanceBtn.addEventListener("click", () => switchView("mark"));
 viewAttendanceBtn.addEventListener("click", () => switchView("view"));
+analyticsBtn.addEventListener("click", () => switchView("analytics"));
 timeTableBtn.addEventListener("click", () => switchView("timeTable"));
 profileBtn.addEventListener("click", () => switchView("profile"));
+chatBtn.addEventListener("click", () => switchView("chat"));
 
 // Make switchView accessible globally for button onclick
 window.switchView = switchView;
@@ -75,13 +86,17 @@ function switchView(view) {
   dashboardView.style.display = "none";
   markAttendanceView.style.display = "none";
   viewAttendanceView.style.display = "none";
+  analyticsView.style.display = "none";
   timeTableView.style.display = "none";
   profileView.style.display = "none";
+  chatView.style.display = "none";
   dashboardBtn.classList.remove("active");
   markAttendanceBtn.classList.remove("active");
   viewAttendanceBtn.classList.remove("active");
+  analyticsBtn.classList.remove("active");
   timeTableBtn.classList.remove("active");
   profileBtn.classList.remove("active");
+  chatBtn.classList.remove("active");
 
   if (view === "dashboard") {
     dashboardView.style.display = "block";
@@ -93,12 +108,19 @@ function switchView(view) {
   } else if (view === "view") {
     viewAttendanceView.style.display = "block";
     viewAttendanceBtn.classList.add("active");
+  } else if (view === "analytics") {
+    analyticsView.style.display = "block";
+    analyticsBtn.classList.add("active");
+    loadStudentAnalytics();
   } else if (view === "timeTable") {
     timeTableView.style.display = "block";
     timeTableBtn.classList.add("active");
   } else if (view === "profile") {
     profileView.style.display = "block";
     profileBtn.classList.add("active");
+  } else if (view === "chat") {
+    chatView.style.display = "block";
+    chatBtn.classList.add("active");
   }
 }
 
@@ -648,6 +670,61 @@ function findUpcomingClass(timeTableData) {
     showTodaySchedule(timeTableData, dayOfWeek, currentTime);
 }
 
+// Facial Recognition Attendance
+const facialAttendanceBtn = document.getElementById("facialAttendanceBtn");
+const facialReader = document.getElementById("facialReader");
+const facialMsg = document.getElementById("facialMsg");
+
+facialAttendanceBtn.addEventListener("click", startFacialAttendance);
+
+async function startFacialAttendance() {
+    facialMsg.textContent = "";
+    facialReader.style.display = "block";
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        facialReader.srcObject = stream;
+        facialReader.play();
+        
+        // Capture image after 3 seconds
+        setTimeout(async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = facialReader.videoWidth;
+            canvas.height = facialReader.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(facialReader, 0, 0);
+            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+            
+            // Stop camera
+            stream.getTracks().forEach(track => track.stop());
+            facialReader.style.display = "none";
+            
+            // Get active session (assuming first one for simplicity)
+            const sessions = await apiGet("/student/active-sessions");
+            if (!sessions || sessions.length === 0) {
+                facialMsg.textContent = "No active attendance sessions.";
+                return;
+            }
+            const session = sessions[0]; // Use first active session
+            
+            // Send to ML service
+            await apiPost("/ml/recognize-face", { image: imageData, sessionId: session._id });
+            facialMsg.textContent = "Attendance marked successfully!";
+            facialMsg.style.color = "green";
+            
+            // Refresh
+            await loadActiveSessions();
+            await loadDashboard();
+            await loadTodayAttendance();
+        }, 3000);
+        
+    } catch (error) {
+        console.error("Facial recognition error", error);
+        facialMsg.textContent = "Error accessing camera or marking attendance.";
+        facialReader.style.display = "none";
+    }
+}
+
 function showTodaySchedule(timeTableData, dayOfWeek, currentTime) {
     const todayClasses = [];
     
@@ -715,7 +792,49 @@ async function loadProfile() {
             <p><strong>Semester:</strong></p><p>${profile.semester}</p>
             <p><strong>Section:</strong></p><p>${profile.section}</p>
         </div>
+        <div style="margin-top: 20px;">
+            <h4 style="color: #fff;">Face Registration for ML Attendance</h4>
+            <button id="registerFaceBtn" style="background: #17a2b8; padding: 10px 20px; cursor: pointer;">📷 Register Face</button>
+            <p id="registerMsg" style="margin-top: 10px;"></p>
+        </div>
     `;
+    
+    // Add event listener for register face
+    document.getElementById("registerFaceBtn").addEventListener("click", registerFace);
+}
+
+async function registerFace() {
+    const registerMsg = document.getElementById("registerMsg");
+    registerMsg.textContent = "Accessing camera...";
+    
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+        
+        // Capture after 3 seconds
+        setTimeout(async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
+            
+            stream.getTracks().forEach(track => track.stop());
+            
+            const profile = await apiGet("/student/profile");
+            await apiPost("/ml/register-face", { studentId: profile.studentId, image: imageData });
+            registerMsg.textContent = "Face registered successfully!";
+            registerMsg.style.color = "green";
+        }, 3000);
+        
+    } catch (error) {
+        console.error("Face registration error", error);
+        registerMsg.textContent = "Error registering face.";
+        registerMsg.style.color = "red";
+    }
   } catch (error) {
     console.error("Profile load error", error);
     profileDetails.innerHTML = "<p>Could not load profile.</p>";
@@ -771,6 +890,198 @@ async function init() {
       await checkActiveSessionsForBanner();
       await loadTodayAttendance(); // Also refresh today's attendance
     }, 30000);
+}
+
+// Chat functionality
+sendChatBtn.addEventListener("click", sendChatMessage);
+chatInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    sendChatMessage();
+  }
+});
+
+async function sendChatMessage() {
+  const message = chatInput.value.trim();
+  if (!message) return;
+
+  // Add user message to chat
+  addMessageToChat("user", message);
+  chatInput.value = "";
+
+  try {
+    const response = await apiPost("/chat/chat", { message });
+    addMessageToChat("ai", response.response);
+  } catch (error) {
+    addMessageToChat("ai", "Sorry, I couldn't process your request right now. Please try again later.");
+  }
+}
+
+function addMessageToChat(sender, message) {
+  const messageDiv = document.createElement("div");
+  messageDiv.style.cssText = `
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    border-radius: 10px;
+    max-width: 80%;
+    word-wrap: break-word;
+  `;
+
+  if (sender === "user") {
+    messageDiv.style.cssText += `
+      background: #17a2b8;
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    `;
+  } else {
+    messageDiv.style.cssText += `
+      background: #333;
+      color: #fff;
+      margin-right: auto;
+    `;
+  }
+
+  messageDiv.textContent = message;
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Student Analytics Functions
+async function loadStudentAnalytics() {
+  try {
+    const data = await apiGet("/analytics/student");
+    
+    // Update summary cards
+    document.getElementById("totalSessions").textContent = data.totalSessions || 0;
+    document.getElementById("presentCount").textContent = data.presentCount || 0;
+    document.getElementById("absentCount").textContent = data.absentCount || 0;
+    document.getElementById("attendancePercentage").textContent = `${data.attendancePercentage || 0}%`;
+    
+    // Load chart
+    loadStudentChart(data.monthlyData || []);
+    
+    // Load table
+    displayStudentAnalyticsTable(data.records || []);
+  } catch (error) {
+    console.error("Error loading student analytics:", error);
+    showToast("Failed to load analytics data", "error");
+  }
+}
+
+async function loadStudentChart(monthlyData) {
+  const ctx = document.getElementById("studentAttendanceChart").getContext("2d");
+  
+  const labels = monthlyData.map(item => item.month);
+  const presentData = monthlyData.map(item => item.present);
+  const absentData = monthlyData.map(item => item.absent);
+  
+  if (window.studentChart) {
+    window.studentChart.destroy();
+  }
+  
+  window.studentChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Present",
+          data: presentData,
+          borderColor: "#28a745",
+          backgroundColor: "rgba(40, 167, 69, 0.1)",
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: "Absent",
+          data: absentData,
+          borderColor: "#dc3545",
+          backgroundColor: "rgba(220, 53, 69, 0.1)",
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: "Monthly Attendance Trend"
+        },
+        legend: {
+          display: true,
+          position: "top"
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Number of Sessions"
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: "Month"
+          }
+        }
+      }
+    }
+  });
+}
+
+async function handleStudentAnalyticsSubmit(event) {
+  event.preventDefault();
+  
+  const startDate = document.getElementById("analyticsStartDate").value;
+  const endDate = document.getElementById("analyticsEndDate").value;
+  
+  if (!startDate || !endDate) {
+    showToast("Please select both start and end dates", "warning");
+    return;
+  }
+  
+  try {
+    const data = await apiGet(`/analytics/student?startDate=${startDate}&endDate=${endDate}`);
+    displayStudentAnalyticsTable(data.records || []);
+  } catch (error) {
+    console.error("Error filtering analytics:", error);
+    showToast("Failed to filter analytics data", "error");
+  }
+}
+
+function displayStudentAnalyticsTable(records) {
+  const tableBody = document.getElementById("studentAnalyticsTableBody");
+  
+  if (!records || records.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 30px; color: #888;">
+          <span style="font-size: 2.5rem;">📊</span>
+          <p style="margin-top: 10px;">No attendance records found for the selected period.</p>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tableBody.innerHTML = records.map(record => `
+    <tr>
+      <td>${new Date(record.date).toLocaleDateString()}</td>
+      <td>${record.subject || 'N/A'}</td>
+      <td>${record.faculty || 'N/A'}</td>
+      <td>
+        <span class="status-badge ${record.status === 'present' ? 'present' : 'absent'}">
+          ${record.status === 'present' ? '✓ Present' : '✗ Absent'}
+        </span>
+      </td>
+      <td>${record.sessionTime || 'N/A'}</td>
+      <td>${record.location || 'N/A'}</td>
+    </tr>
+  `).join("");
 }
 
 init();

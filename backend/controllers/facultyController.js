@@ -174,7 +174,16 @@ export const getMyTimetable = async (req, res, next) => {
   try {
     // Get all classes assigned to this faculty
     const myClasses = await Class.find({ facultyId: req.user._id });
-    
+    const savedFacultySchedule = await FacultySchedule.findOne({ facultyId: req.user._id });
+
+    const hasSavedSchedule = savedFacultySchedule && savedFacultySchedule.schedule &&
+      Object.values(savedFacultySchedule.schedule).some(daySlots => Array.isArray(daySlots) && daySlots.length > 0);
+
+    // Prefer the saved faculty schedule if it exists, because admin schedule edits may be stored there.
+    if (hasSavedSchedule) {
+      return res.json({ schedule: savedFacultySchedule.schedule, classes: myClasses });
+    }
+
     if (myClasses.length === 0) {
       return res.json({ schedule: {}, classes: [] });
     }

@@ -34,26 +34,31 @@ document.getElementById('reportDate').valueAsDate = new Date();
 // View switching
 const dashboardBtn = document.getElementById("dashboardBtn");
 const viewAttendanceBtn = document.getElementById("viewAttendanceBtn");
+const analyticsBtn = document.getElementById("analyticsBtn");
 const timeTableBtn = document.getElementById("timeTableBtn");
 const profileBtn = document.getElementById("profileBtn");
 const dashboardView = document.getElementById("dashboardView");
 const viewAttendanceView = document.getElementById("viewAttendanceView");
+const analyticsView = document.getElementById("analyticsView");
 const timeTableView = document.getElementById("timeTableView");
 const profileView = document.getElementById("profileView");
 const activeSessionPanel = document.getElementById("activeSessionPanel");
 
 dashboardBtn.addEventListener("click", () => switchView("dashboard"));
 viewAttendanceBtn.addEventListener("click", () => switchView("view"));
+analyticsBtn.addEventListener("click", () => switchView("analytics"));
 timeTableBtn.addEventListener("click", () => switchView("timeTable"));
 profileBtn.addEventListener("click", () => switchView("profile"));
 
 function switchView(view) {
   dashboardView.style.display = "none";
   viewAttendanceView.style.display = "none";
+  analyticsView.style.display = "none";
   timeTableView.style.display = "none";
   profileView.style.display = "none";
   dashboardBtn.classList.remove("active");
   viewAttendanceBtn.classList.remove("active");
+  analyticsBtn.classList.remove("active");
   timeTableBtn.classList.remove("active");
   profileBtn.classList.remove("active");
 
@@ -67,6 +72,10 @@ function switchView(view) {
     if (facultyClassesCache.length === 0) {
         fetchFacultyClasses();
     }
+  } else if (view === "analytics") {
+    analyticsView.style.display = "block";
+    analyticsBtn.classList.add("active");
+    loadFacultyAnalytics();
   } else if (view === "timeTable") {
     timeTableView.style.display = "block";
     timeTableBtn.classList.add("active");
@@ -1180,6 +1189,190 @@ async function loadManualAttendanceStudents() {
   } catch (err) {
     console.error("Error loading students for manual attendance:", err);
     manualStudentSelect.innerHTML = '<option value="">Error loading students</option>';
+  }
+}
+
+// ===================== ANALYTICS FUNCTIONS =====================
+
+// Load faculty analytics data
+async function loadFacultyAnalytics() {
+  try {
+    // Populate course dropdown with faculty's courses
+    if (facultyClassesCache.length === 0) {
+      await fetchFacultyClasses();
+    }
+    
+    const courseSelect = document.getElementById("anCourseName");
+    courseSelect.innerHTML = '<option value="">All</option>';
+    
+    // Get unique courses
+    const uniqueCourses = [];
+    const seen = new Set();
+    
+    facultyClassesCache.forEach(c => {
+      if (!seen.has(c.courseCode)) {
+        seen.add(c.courseCode);
+        uniqueCourses.push({ code: c.courseCode, name: c.courseName });
+      }
+    });
+    
+    uniqueCourses.forEach(course => {
+      const option = document.createElement("option");
+      option.value = course.code;
+      option.textContent = `${course.code} - ${course.name}`;
+      courseSelect.appendChild(option);
+    });
+    
+    // Set up form submission
+    const analyticsForm = document.getElementById("analyticsForm");
+    analyticsForm.addEventListener("submit", handleAnalyticsSubmit);
+    
+    // Set up export button
+    const exportBtn = document.getElementById("exportCsvBtn");
+    exportBtn.addEventListener("click", exportAnalyticsCsv);
+    
+  } catch (error) {
+    console.error("Error loading faculty analytics:", error);
+  }
+}
+
+// Handle analytics form submission
+async function handleAnalyticsSubmit(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(e.target);
+  const filters = {
+    semester: formData.get("anSemester") || undefined,
+    section: formData.get("anSection") || undefined,
+    courseName: formData.get("anCourseName") || undefined
+  };
+  
+  try {
+    const response = await apiGet("/analytics/report", filters);
+    
+    // Display chart
+    displayFacultyChart(response.data);
+    
+    // Display table
+    displayAnalyticsTable(response.data);
+    
+  } catch (error) {
+    console.error("Error loading analytics:", error);
+    alert("Failed to load analytics data: " + (error.message || "Unknown error"));
+  }
+}
+
+// Display faculty analytics chart
+function displayFacultyChart(data) {
+  const ctx = document.getElementById("facultyChart").getContext("2d");
+  
+  // Prepare data for chart
+  const labels = data.map(item => `${item.courseCode} - ${item.section}`);
+  const presentData = data.map(item => item.present || 0);
+  const absentData = data.map(item => item.absent || 0);
+  
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Present",
+          data: presentData,
+          backgroundColor: "#28a745",
+          borderColor: "#28a745",
+          borderWidth: 1
+        },
+        {
+          label: "Absent",
+          data: absentData,
+          backgroundColor: "#dc3545",
+          borderColor: "#dc3545",
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Number of Students"
+          }
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Class Attendance Overview"
+        }
+      }
+    }
+  });
+}
+
+// Display analytics table
+function displayAnalyticsTable(data) {
+  const table = document.getElementById("analyticsTable");
+  
+  if (!data || data.length === 0) {
+    table.innerHTML = "<tr><td colspan='6' style='text-align: center;'>No data available</td></tr>";
+    return;
+  }
+  
+  const headers = `
+    <thead>
+      <tr>
+        <th>Course</th>
+        <th>Section</th>
+        <th>Semester</th>
+        <th>Present</th>
+        <th>Absent</th>
+        <th>Attendance %</th>
+      </tr>
+    </thead>
+  `;
+  
+  const rows = data.map(item => {
+    const total = (item.present || 0) + (item.absent || 0);
+    const percentage = total > 0 ? ((item.present || 0) / total * 100).toFixed(1) : 0;
+    
+    return `
+      <tr>
+        <td>${item.courseCode} - ${item.courseName}</td>
+        <td>${item.section}</td>
+        <td>${item.semester}</td>
+        <td>${item.present || 0}</td>
+        <td>${item.absent || 0}</td>
+        <td>${percentage}%</td>
+      </tr>
+    `;
+  }).join("");
+  
+  table.innerHTML = `${headers}<tbody>${rows}</tbody>`;
+}
+
+// Export analytics to CSV
+async function exportAnalyticsCsv() {
+  try {
+    const response = await apiGet("/analytics/export");
+    
+    // Create and download CSV file
+    const blob = new Blob([response], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "faculty_analytics.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+  } catch (error) {
+    console.error("Error exporting CSV:", error);
+    alert("Failed to export CSV: " + (error.message || "Unknown error"));
   }
 }
 

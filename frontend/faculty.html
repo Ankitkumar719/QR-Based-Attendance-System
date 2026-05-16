@@ -14,6 +14,7 @@
     <div class="sidebar-content">
       <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
       <button class="sidebar-btn" id="viewAttendanceBtn">View Attendance</button>
+      <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
       <button class="sidebar-btn" id="timeTableBtn">Time Table</button>
     </div>
     <button class="sidebar-btn" id="profileBtn">Profile</button>
@@ -128,6 +129,46 @@
       <div id="timeTableView" style="display: none;">
         <h3 style="color: #fff; margin-bottom: 20px;">Your Time Table</h3>
         <table id="timeTable"></table>
+      </div>
+
+      <div id="analyticsView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Analytics</h3>
+        <form id="analyticsForm" class="grid">
+          <div class="form-group">
+            <label>Semester</label>
+            <select id="anSemester">
+                <option value="">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Section</label>
+            <select id="anSection">
+                <option value="">All</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Course Name</label>
+            <select id="anCourseName">
+                <option value="">All</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1; text-align: center;">
+            <button type="submit" style="width: auto; padding: 12px 30px;">Load Report</button>
+            <button type="button" id="exportCsvBtn" class="small-btn" style="margin-left: 10px; background: #fff; color: #333;">Export CSV</button>
+          </div>
+        </form>
+        <canvas id="facultyChart" style="max-width:600px; margin-top:20px;"></canvas>
+        <table id="analyticsTable" style="margin-top:20px;"></table>
       </div>
 
       <div id="profileView" style="display: none;">
