@@ -1,6 +1,5 @@
 import express from "express";
-import pkg from "cors";
-const cors = pkg;
+import cors from "cors";
 import morgan from "morgan";
 import http from "http";
 import path from "path";
