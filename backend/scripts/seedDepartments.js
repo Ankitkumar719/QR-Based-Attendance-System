@@ -15,7 +15,7 @@ const defaultDepartments = [
 
 async function seedDepartments() {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/smart_attendance');
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
     // Check if departments already exist

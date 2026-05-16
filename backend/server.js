@@ -99,10 +99,12 @@ io.on("connection", (socket) => {
 });
 
 // ---- START SERVER ----
+const PORT = process.env.PORT || env.PORT;
+
 connectDB()
   .then(() => {
-    server.listen(env.PORT, () => {
-      console.log(`Server running on port ${env.PORT}`);
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((err) => {

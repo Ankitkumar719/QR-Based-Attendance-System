@@ -4,7 +4,7 @@ dotenv.config();
 
 export const env = {
   PORT: process.env.PORT || 5000,
-  MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017/smart_attendance",
+  MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET || "changeme_super_secret",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "1d",
   EMAIL_HOST: process.env.EMAIL_HOST || "",
