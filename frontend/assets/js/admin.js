@@ -130,6 +130,9 @@ function switchView(view) {
   }
 }
 
+// Expose switchView to global scope for onclick handlers
+window.switchView = switchView;
+
 async function loadStats() {
   try {
     const [users, classes, departments, sections, courses] = await Promise.all([

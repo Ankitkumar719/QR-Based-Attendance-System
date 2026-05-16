@@ -6,7 +6,6 @@ A modern, web-based attendance management system designed for educational instit
 - Role-based authentication (Admin, Faculty, Student)
 - QR code-based attendance system
 - 🤖 Facial recognition attendance using Machine Learning
-- 🤖 AI Chat Assistant powered by ChatGPT
 - Real-time attendance tracking
 - Analytics dashboard and reports
 - Email notifications
@@ -40,7 +39,6 @@ pip install opencv-python face-recognition flask
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
 
 # Start Python ML service
 python ml/face_recognition_service.py &
@@ -51,14 +49,7 @@ npm run dev
 
 ## 🤖 AI Features
 - **Facial Recognition**: Students can register their face and mark attendance using facial recognition.
-- **AI Chat Assistant**: Get help with attendance queries, system usage, and troubleshooting powered by ChatGPT.
 
-### Setting up OpenAI API
-1. Get your API key from [OpenAI](https://platform.openai.com/api-keys)
-2. Add it to your `.env` file:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
 git clone <repository-url>
 cd Smart
 cd backend

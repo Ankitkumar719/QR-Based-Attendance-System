@@ -65,6 +65,7 @@ function switchView(view) {
   if (view === "dashboard") {
     dashboardView.style.display = "block";
     dashboardBtn.classList.add("active");
+    loadDashboardFromDB();
   } else if (view === "view") {
     viewAttendanceView.style.display = "block";
     viewAttendanceBtn.classList.add("active");
@@ -79,6 +80,7 @@ function switchView(view) {
   } else if (view === "timeTable") {
     timeTableView.style.display = "block";
     timeTableBtn.classList.add("active");
+    loadTimeTableFromDB();
   } else if (view === "profile") {
     profileView.style.display = "block";
     profileBtn.classList.add("active");
@@ -509,24 +511,29 @@ async function loadTimeTableFromDB() {
     const response = await apiGet("/faculty/timetable");
     facultyTimetable = response;
     
-    if (!response.schedule || Object.keys(response.schedule).length === 0) {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const timeSlots = new Set();
+    let hasAnySlot = false;
+    
+    if (response.schedule) {
+      for (const day of days) {
+        if (response.schedule[day]) {
+          response.schedule[day].forEach(slot => {
+            if (slot && slot.startTime) {
+              hasAnySlot = true;
+              timeSlots.add(`${slot.startTime} - ${slot.endTime}`);
+            }
+          });
+        }
+      }
+    }
+
+    if (!hasAnySlot) {
       timeTable.innerHTML = `<p style="color: #aaa; padding: 20px;">No timetable assigned yet. Please contact admin.</p>`;
       upcomingClassDetails.innerHTML = `<p>No timetable data.</p>`;
       return;
     }
-    
-    // Collect all unique time slots
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const timeSlots = new Set();
-    
-    for (const day of days) {
-      if (response.schedule[day]) {
-        response.schedule[day].forEach(slot => {
-          timeSlots.add(`${slot.startTime} - ${slot.endTime}`);
-        });
-      }
-    }
-    
+
     // Sort time slots
     const sortedTimeSlots = Array.from(timeSlots).sort((a, b) => {
       const timeA = a.split(' - ')[0];
@@ -578,8 +585,8 @@ async function loadTimeTableFromDB() {
     
   } catch (error) {
     console.error("Error loading timetable", error);
-    // Fall back to mock data
-    loadTimeTable();
+    timeTable.innerHTML = `<p style="color: #aaa; padding: 20px;">No timetable assigned yet. Please contact admin.</p>`;
+    upcomingClassDetails.innerHTML = `<p>No timetable data.</p>`;
   }
 }
 

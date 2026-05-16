@@ -20,11 +20,6 @@ const timeTable = document.getElementById("timeTable");
 const activeSessionsList = document.getElementById("activeSessionsList");
 const activeSessionBanner = document.getElementById("activeSessionBanner");
 const activeSessionBannerText = document.getElementById("activeSessionBannerText");
-const chatBtn = document.getElementById("chatBtn");
-const chatView = document.getElementById("chatView");
-const chatMessages = document.getElementById("chatMessages");
-const chatInput = document.getElementById("chatInput");
-const sendChatBtn = document.getElementById("sendChatBtn");
 
 document.getElementById('studentDate').valueAsDate = new Date();
 
@@ -62,14 +57,12 @@ const viewAttendanceBtn = document.getElementById("viewAttendanceBtn");
 const analyticsBtn = document.getElementById("analyticsBtn");
 const timeTableBtn = document.getElementById("timeTableBtn");
 const profileBtn = document.getElementById("profileBtn");
-const chatBtn = document.getElementById("chatBtn");
 const dashboardView = document.getElementById("dashboardView");
 const markAttendanceView = document.getElementById("markAttendanceView");
 const viewAttendanceView = document.getElementById("viewAttendanceView");
 const analyticsView = document.getElementById("analyticsView");
 const timeTableView = document.getElementById("timeTableView");
 const profileView = document.getElementById("profileView");
-const chatView = document.getElementById("chatView");
 
 dashboardBtn.addEventListener("click", () => switchView("dashboard"));
 markAttendanceBtn.addEventListener("click", () => switchView("mark"));
@@ -77,7 +70,6 @@ viewAttendanceBtn.addEventListener("click", () => switchView("view"));
 analyticsBtn.addEventListener("click", () => switchView("analytics"));
 timeTableBtn.addEventListener("click", () => switchView("timeTable"));
 profileBtn.addEventListener("click", () => switchView("profile"));
-chatBtn.addEventListener("click", () => switchView("chat"));
 
 // Make switchView accessible globally for button onclick
 window.switchView = switchView;
@@ -89,14 +81,12 @@ function switchView(view) {
   analyticsView.style.display = "none";
   timeTableView.style.display = "none";
   profileView.style.display = "none";
-  chatView.style.display = "none";
   dashboardBtn.classList.remove("active");
   markAttendanceBtn.classList.remove("active");
   viewAttendanceBtn.classList.remove("active");
   analyticsBtn.classList.remove("active");
   timeTableBtn.classList.remove("active");
   profileBtn.classList.remove("active");
-  chatBtn.classList.remove("active");
 
   if (view === "dashboard") {
     dashboardView.style.display = "block";
@@ -118,9 +108,6 @@ function switchView(view) {
   } else if (view === "profile") {
     profileView.style.display = "block";
     profileBtn.classList.add("active");
-  } else if (view === "chat") {
-    chatView.style.display = "block";
-    chatBtn.classList.add("active");
   }
 }
 
@@ -892,59 +879,6 @@ async function init() {
     }, 30000);
 }
 
-// Chat functionality
-sendChatBtn.addEventListener("click", sendChatMessage);
-chatInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    sendChatMessage();
-  }
-});
-
-async function sendChatMessage() {
-  const message = chatInput.value.trim();
-  if (!message) return;
-
-  // Add user message to chat
-  addMessageToChat("user", message);
-  chatInput.value = "";
-
-  try {
-    const response = await apiPost("/chat/chat", { message });
-    addMessageToChat("ai", response.response);
-  } catch (error) {
-    addMessageToChat("ai", "Sorry, I couldn't process your request right now. Please try again later.");
-  }
-}
-
-function addMessageToChat(sender, message) {
-  const messageDiv = document.createElement("div");
-  messageDiv.style.cssText = `
-    margin-bottom: 15px;
-    padding: 10px 15px;
-    border-radius: 10px;
-    max-width: 80%;
-    word-wrap: break-word;
-  `;
-
-  if (sender === "user") {
-    messageDiv.style.cssText += `
-      background: #17a2b8;
-      color: white;
-      margin-left: auto;
-      text-align: right;
-    `;
-  } else {
-    messageDiv.style.cssText += `
-      background: #333;
-      color: #fff;
-      margin-right: auto;
-    `;
-  }
-
-  messageDiv.textContent = message;
-  chatMessages.appendChild(messageDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
 
 // Student Analytics Functions
 async function loadStudentAnalytics() {
