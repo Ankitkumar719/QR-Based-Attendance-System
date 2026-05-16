@@ -23,7 +23,7 @@ form.addEventListener("submit", async (e) => {
   }
 
   try {
-    const data = await apiPost("/auth/login", { email, password });
+    const data = await apiPost("/api/auth/login", { email, password });
 
     if (data.user.role !== role) {
       throw new Error(`You are not registered as a ${role}.`);

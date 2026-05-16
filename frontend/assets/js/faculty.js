@@ -95,7 +95,7 @@ document.getElementById("reportSection").addEventListener("change", populateSubj
 // Populate subjects for report form based on branch and semester
 async function fetchFacultyClasses() {
   try {
-    const classes = await apiGet("/faculty/classes");
+    const classes = await apiGet("/api/faculty/classes");
     facultyClassesCache = classes;
     populateBranchDropdown();
   } catch (error) {
@@ -216,7 +216,7 @@ async function startSession(classId, sessionData) {
   sessionControls.style.display = "block"; // Show the session controls
   try {
     // Call the real API to start the session
-    const session = await apiPost("/faculty/start-session", { classId });
+    const session = await apiPost("/api/faculty/start-session", { classId });
 
     currentQrToken = session.qrToken;
 
@@ -372,7 +372,7 @@ async function loadStudents(classId) {
       }));
       
       try {
-        const response = await apiPost("/faculty/save-attendance", {
+        const response = await apiPost("/api/faculty/save-attendance", {
           sessionId: currentSessionId,
           attendance: attendanceData
         });
@@ -417,7 +417,7 @@ if (saveAttendanceBtn) {
       return { studentId, status };
     });
     try {
-      const response = await apiPost("/faculty/save-attendance", {
+      const response = await apiPost("/api/faculty/save-attendance", {
         sessionId: currentSessionId,
         attendance: attendanceData
       });
@@ -508,7 +508,7 @@ let facultyTimetable = null;
 
 async function loadTimeTableFromDB() {
   try {
-    const response = await apiGet("/faculty/timetable");
+    const response = await apiGet("/api/faculty/timetable");
     facultyTimetable = response;
     
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -669,7 +669,7 @@ async function startAutoSession(slotData) {
           section: slotData.section
         };
     
-    const response = await apiPost("/faculty/auto-session", payload);
+    const response = await apiPost("/api/faculty/auto-session", payload);
     
     // Build class name for display
     const className = typeof slotData === 'string' ? response.className : 
@@ -693,7 +693,7 @@ async function startAutoSession(slotData) {
 async function viewActiveSession(classId) {
   try {
     // Start auto session will show existing session if there is one
-    const response = await apiPost("/faculty/auto-session", { classId });
+    const response = await apiPost("/api/faculty/auto-session", { classId });
     
     const className = response.className || 'Active Session';
     
@@ -737,11 +737,11 @@ function loadDashboard() {
 async function loadDashboardFromDB() {
   try {
     // Get classes
-    const classes = await apiGet("/faculty/classes");
+    const classes = await apiGet("/api/faculty/classes");
     console.log("Faculty classes:", classes);
     
     // Get faculty's schedule from admin-assigned FacultySchedule
-    const scheduleData = await apiGet("/faculty/my-schedule");
+    const scheduleData = await apiGet("/api/faculty/my-schedule");
     console.log("Faculty schedule data:", scheduleData);
     
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -1049,7 +1049,7 @@ async function loadAttendanceReport(branch, semester, section, subjectCode, date
     // Find the classId for the selected branch, semester, section, subjectCode
     let classes = facultyClassesCache;
     if (classes.length === 0) {
-      classes = await apiGet("/faculty/classes");
+      classes = await apiGet("/api/faculty/classes");
       facultyClassesCache = classes;
     }
 
@@ -1255,7 +1255,7 @@ async function handleAnalyticsSubmit(e) {
   };
   
   try {
-    const response = await apiGet("/analytics/report", filters);
+    const response = await apiGet("/api/analytics/report", filters);
     
     // Display chart
     displayFacultyChart(response.data);
@@ -1364,7 +1364,7 @@ function displayAnalyticsTable(data) {
 // Export analytics to CSV
 async function exportAnalyticsCsv() {
   try {
-    const response = await apiGet("/analytics/export");
+    const response = await apiGet("/api/analytics/export");
     
     // Create and download CSV file
     const blob = new Blob([response], { type: "text/csv" });
@@ -1403,7 +1403,7 @@ async function markStudentManually() {
     manualMarkBtn.disabled = true;
     manualMarkBtn.textContent = "Marking...";
     
-    const result = await apiPost("/faculty/manual-attendance", {
+    const result = await apiPost("/api/faculty/manual-attendance", {
       sessionId: currentSessionId,
       studentId,
       reason: "QR scan not possible"

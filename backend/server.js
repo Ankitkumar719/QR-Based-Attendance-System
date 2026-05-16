@@ -39,13 +39,13 @@ app.get("/api/health", (req, res) => {
   res.json({ message: "Smart Attendance System API" });
 });
 
-// REST endpoints
-app.use("/auth", authRoutes);
-app.use("/admin", adminRoutes);
-app.use("/faculty", facultyRoutes);
-app.use("/student", studentRoutes);
-app.use("/analytics", analyticsRoutes);
-app.use("/ml", mlRoutes);
+// REST endpoints - all under /api prefix
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/faculty", facultyRoutes);
+app.use("/api/student", studentRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ml", mlRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

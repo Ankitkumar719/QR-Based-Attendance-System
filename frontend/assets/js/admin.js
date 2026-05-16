@@ -136,11 +136,11 @@ window.switchView = switchView;
 async function loadStats() {
   try {
     const [users, classes, departments, sections, courses] = await Promise.all([
-      apiGet("/admin/users"),
-      apiGet("/admin/classes"),
-      apiGet("/admin/departments"),
-      apiGet("/admin/sections"),
-      apiGet("/admin/courses"),
+      apiGet("/api/admin/users"),
+      apiGet("/api/admin/classes"),
+      apiGet("/api/admin/departments"),
+      apiGet("/api/admin/sections"),
+      apiGet("/api/admin/courses"),
     ]);
 
     const students = users.filter((u) => u.role === "student");
@@ -316,7 +316,7 @@ function loadSystemSummary(students, faculty, departments, sections, courses, cl
 
 async function loadFacultyTable() {
   try {
-    const users = await apiGet("/admin/users?role=faculty");
+    const users = await apiGet("/api/admin/users?role=faculty");
     if (users.length === 0) {
       facultyListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No faculty found</td></tr>';
       return;
@@ -370,7 +370,7 @@ cfCancelBtn.addEventListener("click", () => {
 async function deleteFaculty(id, name) {
   if (!confirm(`Are you sure you want to delete faculty "${name}"?`)) return;
   try {
-    await apiPost("/admin/users/delete", { userId: id });
+    await apiPost("/api/admin/users/delete", { userId: id });
     loadFacultyTable();
     loadStats();
   } catch (err) {
@@ -406,7 +406,7 @@ createFacultyForm.addEventListener("submit", async (e) => {
         cfMsg.textContent = "Password is required for new faculty";
         return;
       }
-      await apiPost("/admin/users", userData);
+      await apiPost("/api/admin/users", userData);
       cfMsg.style.color = "green";
       cfMsg.textContent = "Faculty created successfully!";
     }
@@ -425,7 +425,7 @@ createFacultyForm.addEventListener("submit", async (e) => {
 
 async function loadStudentList(filters = {}) {
   try {
-    let url = "/admin/users?role=student";
+    let url = "/api/admin/users?role=student";
     if (filters.department) url += `&department=${encodeURIComponent(filters.department)}`;
     if (filters.section) url += `&section=${encodeURIComponent(filters.section)}`;
     
@@ -517,7 +517,7 @@ csCancelBtn.addEventListener("click", () => {
 async function deleteStudent(id, name) {
   if (!confirm(`Are you sure you want to delete student "${name}"?`)) return;
   try {
-    await apiPost("/admin/users/delete", { userId: id });
+    await apiPost("/api/admin/users/delete", { userId: id });
     loadStudentList();
     loadStats();
   } catch (err) {
@@ -559,7 +559,7 @@ createStudentForm.addEventListener("submit", async (e) => {
         csMsg.textContent = "Password is required for new student";
         return;
       }
-      const result = await apiPost("/admin/users", userData);
+      const result = await apiPost("/api/admin/users", userData);
       csMsg.style.color = "green";
       // Guide admin to Step 2 if department not assigned
       if (!userData.department) {
@@ -590,7 +590,7 @@ filterStudentsBtn.addEventListener("click", () => {
 // Populate section filter dropdown
 async function loadStudentFilterSections() {
   try {
-    const sections = await apiGet("/admin/sections");
+    const sections = await apiGet("/api/admin/sections");
     const filterSelect = document.getElementById("studentFilterSection");
     filterSelect.innerHTML = '<option value="">All Sections</option>';
     sections.forEach(s => {
@@ -624,7 +624,7 @@ const selectedCountEl = document.getElementById("selectedCount");
 // Load department dropdowns for promote section
 async function loadPromoteDepartmentDropdowns() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     const selects = ["promoteFilterDept", "individualFilterDept"];
     selects.forEach(id => {
       const select = document.getElementById(id);
@@ -637,7 +637,7 @@ async function loadPromoteDepartmentDropdowns() {
     });
     
     // Load sections for group promote filter
-    const sections = await apiGet("/admin/sections");
+    const sections = await apiGet("/api/admin/sections");
     const promoteFilterSection = document.getElementById("promoteFilterSection");
     if (promoteFilterSection) {
       promoteFilterSection.innerHTML = '<option value="">All Sections</option>';
@@ -666,7 +666,7 @@ promoteGroupBtn.addEventListener("click", async () => {
   }
   
   // Build filter query
-  let url = "/admin/users?role=student";
+  let url = "/api/admin/users?role=student";
   if (dept) url += `&department=${encodeURIComponent(dept)}`;
   if (section) url += `&section=${encodeURIComponent(section)}`;
   if (fromSem) url += `&semester=${encodeURIComponent(fromSem)}`;
@@ -729,7 +729,7 @@ loadPromoteListBtn.addEventListener("click", async () => {
   const dept = document.getElementById("individualFilterDept").value;
   const sem = document.getElementById("individualFilterSem").value;
   
-  let url = "/admin/users?role=student";
+  let url = "/api/admin/users?role=student";
   if (dept) url += `&department=${encodeURIComponent(dept)}`;
   if (sem) url += `&semester=${encodeURIComponent(sem)}`;
   
@@ -845,7 +845,7 @@ const departmentListBody = document.getElementById("departmentListBody");
 
 async function loadDepartmentList() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     if (departments.length === 0) {
       departmentListBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No departments found. Create one above.</td></tr>';
       return;
@@ -894,7 +894,7 @@ createDepartmentForm.addEventListener("submit", async (e) => {
   };
   
   try {
-    await apiPost("/admin/departments", deptData);
+    await apiPost("/api/admin/departments", deptData);
     deptMsg.style.color = "green";
     deptMsg.textContent = `Department "${deptData.name}" (${deptData.code}) created successfully!`;
     createDepartmentForm.reset();
@@ -909,7 +909,7 @@ createDepartmentForm.addEventListener("submit", async (e) => {
 // Load departments into various dropdowns
 async function loadUserDepartmentDropdowns() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     const cfDepartment = document.getElementById("cfDepartment");
     const csDepartment = document.getElementById("csDepartment");
     const studentFilterDept = document.getElementById("studentFilterDept");
@@ -939,7 +939,7 @@ async function loadUserDepartmentDropdowns() {
 // Load departments for section management dropdowns
 async function loadDepartmentDropdowns() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     const secDepartment = document.getElementById("secDepartment");
     const sectionFilterDept = document.getElementById("sectionFilterDept");
     
@@ -960,7 +960,7 @@ async function loadDepartmentDropdowns() {
 // Load departments for timetable filter
 async function loadTimetableDepartmentFilter() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     const ttDepartmentFilter = document.getElementById("ttDepartmentFilter");
     
     ttDepartmentFilter.innerHTML = '<option value="">All Departments</option>';
@@ -981,7 +981,7 @@ const sectionFilterDept = document.getElementById("sectionFilterDept");
 
 async function loadSectionList(department = "") {
   try {
-    let url = "/admin/sections";
+    let url = "/api/admin/sections";
     if (department) url += `?department=${encodeURIComponent(department)}`;
     
     const sections = await apiGet(url);
@@ -1033,7 +1033,7 @@ createSectionForm.addEventListener("submit", async (e) => {
   };
   
   try {
-    await apiPost("/admin/sections", sectionData);
+    await apiPost("/api/admin/sections", sectionData);
     secMsg.style.color = "green";
     secMsg.textContent = `Section "${sectionData.name}" created successfully!`;
     createSectionForm.reset();
@@ -1060,7 +1060,7 @@ const filterCoursesBtn = document.getElementById("filterCoursesBtn");
 
 async function loadCourseList(department = "", semester = "") {
   try {
-    let url = "/admin/courses";
+    let url = "/api/admin/courses";
     const params = [];
     if (department) params.push(`department=${encodeURIComponent(department)}`);
     if (semester) params.push(`semester=${semester}`);
@@ -1120,7 +1120,7 @@ createCourseForm.addEventListener("submit", async (e) => {
   };
   
   try {
-    await apiPost("/admin/courses", courseData);
+    await apiPost("/api/admin/courses", courseData);
     courseMsg.style.color = "green";
     courseMsg.textContent = `Course "${courseData.courseCode} - ${courseData.courseName}" created successfully!`;
     createCourseForm.reset();
@@ -1139,7 +1139,7 @@ filterCoursesBtn.addEventListener("click", () => {
 // Load departments for course management dropdowns
 async function loadCourseDepartmentDropdowns() {
   try {
-    const departments = await apiGet("/admin/departments");
+    const departments = await apiGet("/api/admin/departments");
     const courseDepartment = document.getElementById("courseDepartment");
     
     courseDepartment.innerHTML = '<option value="">Select Department</option>';
@@ -1341,9 +1341,9 @@ promoteForm.addEventListener("submit", async (e) => {
     if (section) body.section = section;
 
     if (fromSemester === "8") {
-      result = await apiPost("/admin/graduate", body);
+      result = await apiPost("/api/admin/graduate", body);
     } else {
-      result = await apiPost("/admin/promote", body);
+      result = await apiPost("/api/admin/promote", body);
     }
 
     prMsg.style.color = "green";
@@ -1383,7 +1383,7 @@ const scheduleStatus = document.getElementById("scheduleStatus");
 async function loadFacultyDropdown() {
   try {
     console.log("Loading faculty dropdown...");
-    const users = await apiGet("/admin/users?role=faculty");
+    const users = await apiGet("/api/admin/users?role=faculty");
     console.log("Faculty users received:", users);
     allFacultyList = users;
     console.log("ttFacultySelect element:", ttFacultySelect);
@@ -1442,10 +1442,10 @@ loadFacultyScheduleBtn.addEventListener("click", async () => {
     const facultyDept = selectedFaculty.dataset.dept;
     
     // Load ALL courses (not just assigned classes) - filtered by faculty's department if available
-    let coursesUrl = "/admin/courses";
+    let coursesUrl = "/api/admin/courses";
     if (facultyDept) {
       // First get the department ID
-      const departments = await apiGet("/admin/departments");
+      const departments = await apiGet("/api/admin/departments");
       const dept = departments.find(d => d.name === facultyDept);
       if (dept) {
         coursesUrl += `?department=${dept._id}`;
@@ -1527,7 +1527,7 @@ addSlotBtn.addEventListener("click", async () => {
   }
   
   try {
-    await apiPost("/admin/faculty-schedule/slot", {
+    await apiPost("/api/admin/faculty-schedule/slot", {
       facultyId: currentFacultyId,
       day,
       startTime,
@@ -1618,7 +1618,7 @@ function renderFacultySchedule() {
       const startTime = btn.dataset.time;
       
       try {
-        await apiPost("/admin/faculty-schedule/slot/delete", {
+        await apiPost("/api/admin/faculty-schedule/slot/delete", {
           facultyId: currentFacultyId,
           day,
           startTime
@@ -1649,7 +1649,7 @@ saveScheduleBtn.addEventListener("click", async () => {
     saveScheduleBtn.textContent = "Saving...";
     
     // Save the complete schedule
-    await apiPost("/admin/faculty-schedule/save", {
+    await apiPost("/api/admin/faculty-schedule/save", {
       facultyId: currentFacultyId,
       schedule: currentFacultySchedule.schedule
     });

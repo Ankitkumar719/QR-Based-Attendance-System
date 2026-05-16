@@ -116,7 +116,7 @@ async function loadTodayAttendance() {
   const todayAttendanceList = document.getElementById("todayAttendanceList");
   
   try {
-    const data = await apiGet("/student/today-attendance");
+    const data = await apiGet("/api/student/today-attendance");
     
     if (!data.records || data.records.length === 0) {
       todayAttendanceList.innerHTML = `
@@ -207,7 +207,7 @@ window.loadTodayAttendance = loadTodayAttendance;
 
 async function loadDashboard() {
   try {
-    const data = await apiGet("/student/dashboard");
+    const data = await apiGet("/api/student/dashboard");
     const summaryCardsHTML = `
         <div class="card"><h3>Overall Attendance</h3><p style="font-size: 2rem; font-weight: bold;">${data.overallPercentage}%</p></div>
         <div class="card"><h3>Total Classes</h3><p style="font-size: 2rem; font-weight: bold;">${data.totalClasses}</p></div>
@@ -233,7 +233,7 @@ async function loadDashboard() {
 // Load active attendance sessions for the student
 async function loadActiveSessions() {
   try {
-    const sessions = await apiGet("/student/active-sessions");
+    const sessions = await apiGet("/api/student/active-sessions");
     
     if (!sessions || sessions.length === 0) {
       activeSessionsList.innerHTML = `
@@ -342,7 +342,7 @@ window.markSessionAttendance = async function(qrToken, button) {
   button.disabled = true;
   
   try {
-    await apiPost("/student/mark-attendance", { qrToken });
+    await apiPost("/api/student/mark-attendance", { qrToken });
     button.innerHTML = '✅ Marked!';
     button.style.background = '#28a745';
     
@@ -370,7 +370,7 @@ window.markSessionAttendance = async function(qrToken, button) {
 // Check for active sessions and show banner on dashboard
 async function checkActiveSessionsForBanner() {
   try {
-    const sessions = await apiGet("/student/active-sessions");
+    const sessions = await apiGet("/api/student/active-sessions");
     
     // Filter sessions that haven't been marked yet
     const unmarkedSessions = sessions.filter(s => !s.alreadyMarked);
@@ -403,7 +403,7 @@ async function handleMarkAttendance(token) {
   markMsg.style.color = "orange";
 
   try {
-    await apiPost("/student/mark-attendance", { qrToken: token });
+    await apiPost("/api/student/mark-attendance", { qrToken: token });
     markMsg.style.color = "green";
     markMsg.textContent = "Attendance marked successfully!";
     qrTokenInput.value = token; // show the token that was used
@@ -545,7 +545,7 @@ if (window.Html5Qrcode) {
 
 async function loadTimeTable() {
   try {
-    const timeTableData = await apiGet("/student/timetable");
+    const timeTableData = await apiGet("/api/student/timetable");
     
     if (!timeTableData || timeTableData.length === 0) {
       timeTable.innerHTML = `
@@ -687,7 +687,7 @@ async function startFacialAttendance() {
             facialReader.style.display = "none";
             
             // Get active session (assuming first one for simplicity)
-            const sessions = await apiGet("/student/active-sessions");
+            const sessions = await apiGet("/api/student/active-sessions");
             if (!sessions || sessions.length === 0) {
                 facialMsg.textContent = "No active attendance sessions.";
                 return;
@@ -695,7 +695,7 @@ async function startFacialAttendance() {
             const session = sessions[0]; // Use first active session
             
             // Send to ML service
-            await apiPost("/ml/recognize-face", { image: imageData, sessionId: session._id });
+            await apiPost("/api/ml/recognize-face", { image: imageData, sessionId: session._id });
             facialMsg.textContent = "Attendance marked successfully!";
             facialMsg.style.color = "green";
             
@@ -769,7 +769,7 @@ function showTodaySchedule(timeTableData, dayOfWeek, currentTime) {
 
 async function loadProfile() {
   try {
-    const profile = await apiGet("/student/profile");
+    const profile = await apiGet("/api/student/profile");
     profileDetails.innerHTML = `
         <div class="upcoming-class-grid">
             <p><strong>Name:</strong></p><p>${profile.name}</p>
@@ -811,8 +811,8 @@ async function registerFace() {
             
             stream.getTracks().forEach(track => track.stop());
             
-            const profile = await apiGet("/student/profile");
-            await apiPost("/ml/register-face", { studentId: profile.studentId, image: imageData });
+            const profile = await apiGet("/api/student/profile");
+            await apiPost("/api/ml/register-face", { studentId: profile.studentId, image: imageData });
             registerMsg.textContent = "Face registered successfully!";
             registerMsg.style.color = "green";
         }, 3000);
@@ -883,7 +883,7 @@ async function init() {
 // Student Analytics Functions
 async function loadStudentAnalytics() {
   try {
-    const data = await apiGet("/analytics/student");
+    const data = await apiGet("/api/analytics/student");
     
     // Update summary cards
     document.getElementById("totalSessions").textContent = data.totalSessions || 0;
