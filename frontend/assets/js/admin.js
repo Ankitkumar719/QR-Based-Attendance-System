@@ -1207,7 +1207,7 @@ exportCsvBtn.addEventListener("click", () => {
   if (sec) params.append("section", sec);
   if (name) params.append("courseName", name);
 
-  window.open(`https://your-backend.onrender.com/analytics/export?${params.toString()}`);
+  window.open(`https://qr-based-attendance-system-zili.onrender.com/analytics/export?${params.toString()}`);
 });
 
 function renderAnalytics(report) {
