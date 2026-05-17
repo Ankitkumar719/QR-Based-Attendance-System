@@ -935,7 +935,46 @@ async function registerFace() {
     console.log("[registerFace] Camera stream obtained");
 
     const video = document.createElement("video");
+    video.setAttribute("playsinline", "true");
+    video.muted = true;
+    video.autoplay = true;
     video.srcObject = stream;
+
+    // Render a visible preview overlay (previously video was never added to the DOM)
+    const previewOverlay = document.createElement("div");
+    previewOverlay.id = "faceRegisterPreviewOverlay";
+    previewOverlay.style.position = "fixed";
+    previewOverlay.style.inset = "0";
+    previewOverlay.style.background = "rgba(0,0,0,0.8)";
+    previewOverlay.style.zIndex = "99999";
+    previewOverlay.style.display = "flex";
+    previewOverlay.style.alignItems = "center";
+    previewOverlay.style.justifyContent = "center";
+    previewOverlay.style.flexDirection = "column";
+    previewOverlay.style.gap = "12px";
+
+    const previewTitle = document.createElement("div");
+    previewTitle.textContent = "Align your face in the frame…";
+    previewTitle.style.color = "#fff";
+    previewTitle.style.fontSize = "16px";
+    previewTitle.style.fontWeight = "600";
+
+    video.style.width = "min(520px, 92vw)";
+    video.style.maxHeight = "70vh";
+    video.style.borderRadius = "12px";
+    video.style.border = "2px solid rgba(255,255,255,0.25)";
+    video.style.boxShadow = "0 12px 40px rgba(0,0,0,0.6)";
+    video.style.background = "#000";
+
+    const previewHint = document.createElement("div");
+    previewHint.textContent = "Capturing in 3 seconds…";
+    previewHint.style.color = "rgba(255,255,255,0.85)";
+    previewHint.style.fontSize = "13px";
+
+    previewOverlay.appendChild(previewTitle);
+    previewOverlay.appendChild(video);
+    previewOverlay.appendChild(previewHint);
+    document.body.appendChild(previewOverlay);
     await video.play();
 
     setTimeout(async () => {
@@ -950,6 +989,7 @@ async function registerFace() {
           });
           setMessage("Failed to capture video. Please try again.", true);
           stream.getTracks().forEach((track) => track.stop());
+          previewOverlay.remove();
           return;
         }
 
@@ -973,6 +1013,7 @@ async function registerFace() {
         // Stop camera immediately
         stream.getTracks().forEach((track) => track.stop());
         console.log("[registerFace] Camera stream stopped");
+        previewOverlay.remove();
 
         setStatus("👤 Uploading to face recognition service...");
 
@@ -1020,6 +1061,8 @@ async function registerFace() {
           status: error.response?.status,
           fullError: error,
         });
+
+        try { previewOverlay.remove(); } catch (e) { /* ignore */ }
 
         // Provide specific error messages based on error type
         let errorMsg = "Error registering face.";
@@ -1076,6 +1119,7 @@ async function registerFace() {
     }
 
     setMessage(errorMsg, true);
+    try { document.getElementById("faceRegisterPreviewOverlay")?.remove(); } catch (e) { /* ignore */ }
 
     // Re-enable button
     if (registerBtn) {

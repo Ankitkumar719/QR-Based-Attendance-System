@@ -238,10 +238,31 @@ export const verifyFace = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    const response = await axios.post(
-      `${FACE_ML_SERVICE_URL}/recognize_face`,
+    if (!FACE_ML_SERVICE_URL) {
+      console.error("[mlController.verifyFace] Face ML service URL missing");
+      return res.status(503).json({
+        message: "Face recognition service URL is not configured.",
+        code: "FACE_SERVICE_UNAVAILABLE",
+      });
+    }
+
+    if (env.NODE_ENV === "production" && isLocalhostUrl(FACE_ML_SERVICE_URL)) {
+      console.error(
+        "[mlController.verifyFace] Face ML service misconfigured (localhost in prod)",
+        { url: FACE_ML_SERVICE_URL }
+      );
+      return res.status(503).json({
+        message:
+          "Face recognition service is not configured for production. Set FACE_SERVICE_URL.",
+        code: "FACE_SERVICE_UNAVAILABLE",
+      });
+    }
+
+    const endpoint = `${FACE_ML_SERVICE_URL}/recognize_face`;
+    const response = await postToFaceMlWithRetry(
+      endpoint,
       { image },
-      { timeout: 30_000 }
+      { timeoutMs: FACE_ML_TIMEOUT_MS, maxAttempts: env.NODE_ENV === "production" ? 3 : 1 }
     );
 
     const { student_id, confidence } = response.data;
@@ -292,11 +313,70 @@ export const verifyFace = async (req, res) => {
       message: "Face verified. Scan the faculty QR code to complete attendance.",
     });
   } catch (error) {
-    console.error("[mlController.verifyFace]", error.message);
-    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
-      return res.status(503).json({ message: "Face recognition service unavailable" });
+    console.error("[mlController.verifyFace] error", {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      response: error.response?.data,
+    });
+
+    if (error.code === "ECONNREFUSED") {
+      return res.status(503).json({
+        message: "Face recognition service is not running",
+        code: "FACE_SERVICE_NOT_RUNNING",
+      });
     }
-    res.status(500).json({ message: "Face verification failed" });
+
+    if (error.code === "ENOTFOUND" || error.code === "EHOSTUNREACH") {
+      return res.status(503).json({
+        message: "Face recognition service is unreachable",
+        code: "FACE_SERVICE_UNREACHABLE",
+      });
+    }
+
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      return res.status(504).json({
+        message: "Face recognition service timed out",
+        code: "FACE_SERVICE_TIMEOUT",
+      });
+    }
+
+    return res.status(error.response?.status || 500).json({
+      message:
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Face verification failed",
+      code: "FACE_VERIFICATION_FAILED",
+    });
+  }
+};
+
+export const faceServiceHealth = async (req, res) => {
+  try {
+    if (!FACE_ML_SERVICE_URL) {
+      return res.status(503).json({
+        ok: false,
+        message: "Face recognition service URL is not configured.",
+        code: "FACE_SERVICE_UNAVAILABLE",
+      });
+    }
+
+    const endpoint = `${FACE_ML_SERVICE_URL}/health`;
+    const r = await axios.get(endpoint, { timeout: Math.min(10_000, FACE_ML_TIMEOUT_MS) });
+    return res.status(200).json({ ok: true, serviceUrl: FACE_ML_SERVICE_URL, data: r.data });
+  } catch (error) {
+    console.error("[mlController.faceServiceHealth] error", {
+      url: FACE_ML_SERVICE_URL,
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      response: error.response?.data,
+    });
+    return res.status(503).json({
+      ok: false,
+      message: "Face recognition service health check failed",
+      code: "FACE_SERVICE_UNREACHABLE",
+    });
   }
 };
 
