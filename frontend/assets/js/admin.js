@@ -54,6 +54,7 @@ const departmentsBtn = document.getElementById("departmentsBtn");
 const sectionsBtn = document.getElementById("sectionsBtn");
 const coursesBtn = document.getElementById("coursesBtn");
 const timetableBtn = document.getElementById("timetableBtn");
+const faceRegsBtn = document.getElementById("faceRegsBtn");
 const promoteBtn = document.getElementById("promoteBtn");
 const analyticsBtn = document.getElementById("analyticsBtn");
 const profileBtn = document.getElementById("profileBtn");
@@ -64,6 +65,7 @@ const departmentsView = document.getElementById("departmentsView");
 const sectionsView = document.getElementById("sectionsView");
 const coursesView = document.getElementById("coursesView");
 const timetableView = document.getElementById("timetableView");
+const faceRegsView = document.getElementById("faceRegsView");
 const promoteView = document.getElementById("promoteView");
 const analyticsView = document.getElementById("analyticsView");
 const profileView = document.getElementById("profileView");
@@ -74,6 +76,7 @@ departmentsBtn.addEventListener("click", () => switchView("departments"));
 sectionsBtn.addEventListener("click", () => switchView("sections"));
 coursesBtn.addEventListener("click", () => switchView("courses"));
 timetableBtn.addEventListener("click", () => switchView("timetable"));
+faceRegsBtn?.addEventListener("click", () => switchView("faceRegs"));
 promoteBtn.addEventListener("click", () => switchView("promote"));
 analyticsBtn.addEventListener("click", () => switchView("analytics"));
 profileBtn.addEventListener("click", () => switchView("profile"));
@@ -85,6 +88,7 @@ function switchView(view) {
   sectionsView.style.display = "none";
   coursesView.style.display = "none";
   timetableView.style.display = "none";
+  if (faceRegsView) faceRegsView.style.display = "none";
   promoteView.style.display = "none";
   analyticsView.style.display = "none";
   profileView.style.display = "none";
@@ -94,6 +98,7 @@ function switchView(view) {
   sectionsBtn.classList.remove("active");
   coursesBtn.classList.remove("active");
   timetableBtn.classList.remove("active");
+  faceRegsBtn?.classList.remove("active");
   promoteBtn.classList.remove("active");
   analyticsBtn.classList.remove("active");
   profileBtn.classList.remove("active");
@@ -124,6 +129,10 @@ function switchView(view) {
     timetableBtn.classList.add("active");
     loadFacultyDropdown(); // Load faculty list for timetable
     loadTimetableDepartmentFilter(); // Load department filter
+  } else if (view === "faceRegs") {
+    faceRegsView.style.display = "block";
+    faceRegsBtn?.classList.add("active");
+    loadFaceRegistrations();
   } else if (view === "promote") {
     promoteView.style.display = "block";
     promoteBtn.classList.add("active");
@@ -139,6 +148,120 @@ function switchView(view) {
 
 // Expose switchView to global scope for onclick handlers
 window.switchView = switchView;
+
+// ---------------------------------------------------------------------------
+// Face registration management (Admin)
+// ---------------------------------------------------------------------------
+const faceRegsTableBody = document.getElementById("faceRegsTableBody");
+const faceRegsMsg = document.getElementById("faceRegsMsg");
+const faceRegsSearch = document.getElementById("faceRegsSearch");
+const faceRegsRefreshBtn = document.getElementById("faceRegsRefreshBtn");
+
+let _faceRegsCache = [];
+
+const formatDateTime = (d) => {
+  if (!d) return "";
+  try {
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return "";
+    return dt.toLocaleString();
+  } catch (e) {
+    return "";
+  }
+};
+
+function renderFaceRegs(rows) {
+  if (!faceRegsTableBody) return;
+  if (!rows || rows.length === 0) {
+    faceRegsTableBody.innerHTML =
+      '<tr><td colspan="7" style="text-align:center;">No students found</td></tr>';
+    return;
+  }
+
+  faceRegsTableBody.innerHTML = rows
+    .map((s) => {
+      const has = Boolean(s.face?.hasDescriptor);
+      const disabled = Boolean(s.face?.disabled);
+      const reg = formatDateTime(s.face?.registeredAt);
+      const upd = formatDateTime(s.face?.updatedAt);
+
+      return `
+        <tr>
+          <td>${s.rollNo || ""}</td>
+          <td>${s.name || ""}</td>
+          <td>${s.email || ""}</td>
+          <td>${has ? reg || "Yes" : '<span style="color:#888;">No</span>'}</td>
+          <td>${has ? upd || "" : ""}</td>
+          <td>${disabled ? `<span style="color:#ff6b6b;">Yes</span>` : `<span style="color:#28a745;">No</span>`}</td>
+          <td style="white-space: nowrap;">
+            <button class="small-btn" data-action="toggle" data-id="${s._id}" style="background:${disabled ? "#17a2b8" : "#dc3545"};">
+              ${disabled ? "Enable" : "Disable"}
+            </button>
+            <button class="small-btn" data-action="reset" data-id="${s._id}" style="background:#6c757d;">
+              Reset
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function filterFaceRegs() {
+  const q = String(faceRegsSearch?.value || "").trim().toLowerCase();
+  if (!q) return _faceRegsCache;
+  return _faceRegsCache.filter((s) => {
+    const hay = `${s.name || ""} ${s.rollNo || ""} ${s.email || ""}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+async function loadFaceRegistrations() {
+  if (!faceRegsTableBody) return;
+  if (faceRegsMsg) faceRegsMsg.textContent = "";
+  faceRegsTableBody.innerHTML =
+    '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
+
+  try {
+    const rows = await apiGet("/api/admin/face-registrations");
+    _faceRegsCache = Array.isArray(rows) ? rows : [];
+    renderFaceRegs(filterFaceRegs());
+  } catch (err) {
+    console.error("Error loading face registrations", err);
+    faceRegsTableBody.innerHTML =
+      '<tr><td colspan="7" style="text-align:center; color:#ff6b6b;">Error loading face registrations</td></tr>';
+    if (faceRegsMsg) faceRegsMsg.textContent = err.message || "Failed to load face registrations";
+  }
+}
+
+faceRegsSearch?.addEventListener("input", () => renderFaceRegs(filterFaceRegs()));
+faceRegsRefreshBtn?.addEventListener("click", () => loadFaceRegistrations());
+
+faceRegsTableBody?.addEventListener("click", async (e) => {
+  const btn = e.target?.closest("button[data-action]");
+  if (!btn) return;
+  const action = btn.getAttribute("data-action");
+  const id = btn.getAttribute("data-id");
+  if (!id) return;
+
+  try {
+    if (action === "reset") {
+      if (!confirm("Reset face registration for this student?")) return;
+      await apiDelete(`/api/admin/face-registrations/${id}`);
+      await loadFaceRegistrations();
+    } else if (action === "toggle") {
+      const row = _faceRegsCache.find((x) => x._id === id);
+      const currentlyDisabled = Boolean(row?.face?.disabled);
+      const disabled = !currentlyDisabled;
+      const reason = disabled ? prompt("Reason for disabling (optional):") : "";
+      await apiPost(`/api/admin/face-registrations/${id}/disable`, { disabled, reason });
+      await loadFaceRegistrations();
+    }
+  } catch (err) {
+    console.error("Face registration admin action failed", err);
+    if (faceRegsMsg) faceRegsMsg.textContent = err.message || "Action failed";
+  }
+});
 
 async function loadStats() {
   try {

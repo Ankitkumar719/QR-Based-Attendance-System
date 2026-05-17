@@ -7,6 +7,8 @@ import base64
 import logging
 from PIL import Image
 import io
+from pymongo import MongoClient
+from urllib.parse import urlparse
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,10 +26,50 @@ if not os.path.exists(FACE_DATA_DIR):
     os.makedirs(FACE_DATA_DIR)
     logger.info(f"Created face data directory: {FACE_DATA_DIR}")
 
+def _get_mongo_collection():
+    """Return (collection, client) for users collection if MONGO_URI is set, else (None, None)."""
+    mongo_uri = os.getenv("MONGO_URI") or os.getenv("MONGODB_URI")
+    if not mongo_uri:
+        return None, None
+
+    try:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=4000)
+        parsed = urlparse(mongo_uri)
+        db_name = (parsed.path or "").lstrip("/") or "smart_attendance"
+        db = client[db_name]
+        return db["users"], client
+    except Exception as e:
+        logger.error(f"Mongo connection init failed: {e}")
+        return None, None
+
 def load_known_faces():
     """Load all registered face encodings from disk."""
     known_face_encodings = []
     known_face_names = []
+
+    # Prefer MongoDB (persists across redeploys); fallback to disk.
+    users_col, client = _get_mongo_collection()
+    if users_col is not None:
+        try:
+            cursor = users_col.find(
+                {"face.descriptor": {"$exists": True}, "face.disabled": {"$ne": True}},
+                {"rollNo": 1, "face.descriptor": 1},
+            )
+            for doc in cursor:
+                descriptor = doc.get("face", {}).get("descriptor")
+                if isinstance(descriptor, list) and len(descriptor) > 0:
+                    known_face_encodings.append(np.array(descriptor, dtype=np.float64))
+                    known_face_names.append(str(doc.get("rollNo") or doc.get("_id")))
+            logger.info(f"Loaded {len(known_face_encodings)} face encodings from MongoDB")
+            return known_face_encodings, known_face_names
+        except Exception as e:
+            logger.error(f"Error loading face data from MongoDB: {e}")
+        finally:
+            try:
+                client.close()
+            except Exception:
+                pass
+
     try:
         for filename in os.listdir(FACE_DATA_DIR):
             if filename.endswith('.npy'):
@@ -124,19 +166,25 @@ def register_face():
                 'error': 'Multiple faces detected. Please ensure only your face is in the image.'
             }), 400
 
-        # Save the face encoding
+        encoding = face_encodings[0]
+        descriptor = encoding.tolist()
+
+        # Best-effort save to disk for local/dev backward-compatibility.
+        disk_saved = False
         try:
-            encoding = face_encodings[0]
             filepath = os.path.join(FACE_DATA_DIR, f'{student_id}.npy')
             np.save(filepath, encoding)
-            logger.info(f"[register_face] Face encoding saved for student {student_id}")
-            return jsonify({
-                'message': 'Face registered successfully',
-                'student_id': student_id
-            }), 200
+            disk_saved = True
+            logger.info(f"[register_face] Face encoding saved to disk for student {student_id}")
         except Exception as e:
-            logger.error(f"[register_face] Failed to save face encoding: {e}")
-            return jsonify({'error': f'Failed to save face encoding: {str(e)}'}), 500
+            logger.warning(f"[register_face] Disk save failed (continuing): {e}")
+
+        return jsonify({
+            'message': 'Face registered successfully',
+            'student_id': student_id,
+            'descriptor': descriptor,
+            'disk_saved': disk_saved
+        }), 200
 
     except Exception as e:
         logger.exception(f"[register_face] Unexpected error: {e}")

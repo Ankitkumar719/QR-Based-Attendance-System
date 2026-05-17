@@ -15,7 +15,19 @@ const userSchema = new mongoose.Schema(
     section: { type: String },
     rollNo: { type: String, unique: true, sparse: true }, // e.g., 24CSE0001
     admissionYear: { type: Number }, // e.g., 2024
-    status: { type: String, enum: ["active", "graduated", "inactive"], default: "active" }
+    status: { type: String, enum: ["active", "graduated", "inactive"], default: "active" },
+
+    /** Face registration metadata (descriptor is 128-length float vector).
+     * Stored in MongoDB to persist across restarts/deploys.
+     */
+    face: {
+      descriptor: { type: [Number], default: undefined },
+      registeredAt: { type: Date },
+      updatedAt: { type: Date },
+      disabled: { type: Boolean, default: false },
+      disabledAt: { type: Date },
+      disabledReason: { type: String }
+    }
   },
   { timestamps: true }
 );

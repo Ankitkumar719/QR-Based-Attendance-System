@@ -34,6 +34,12 @@ import {
   assignAcademicDetails,
   listUnassignedStudents
 } from "../controllers/adminController.js";
+import {
+  listFaceRegistrations,
+  resetFaceRegistration,
+  setFaceRegistrationDisabled,
+  listFaceRegistrationLogs,
+} from "../controllers/faceAdminController.js";
 import { report, exportCsv } from "../controllers/analyticsController.js";
 import {
   retrainAttendanceModel,
@@ -101,5 +107,11 @@ router.get("/analytics/export", exportCsv);
 // ML shortage model (proxied to Flask on port 8000)
 router.get("/ml/training-status", mlTrainingStatus);
 router.post("/ml/retrain", retrainAttendanceModel);
+
+// Face registration management (admin-only)
+router.get("/face-registrations", listFaceRegistrations);
+router.delete("/face-registrations/:studentId", resetFaceRegistration);
+router.patch("/face-registrations/:studentId/disable", setFaceRegistrationDisabled);
+router.get("/face-registrations/logs", listFaceRegistrationLogs);
 
 export default router;

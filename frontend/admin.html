@@ -17,6 +17,7 @@
       <button class="sidebar-btn" id="sectionsBtn">Manage Sections</button>
       <button class="sidebar-btn" id="coursesBtn">Manage Courses</button>
       <button class="sidebar-btn" id="timetableBtn">Manage Timetable</button>
+      <button class="sidebar-btn" id="faceRegsBtn">Manage Face Registrations</button>
       <button class="sidebar-btn" id="promoteBtn">Promote Students</button>
       <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
     </div>
@@ -760,6 +761,41 @@
         </form>
         <canvas id="adminChart" style="max-width:600px; margin-top:20px;"></canvas>
         <table id="analyticsTable" style="margin-top:20px;"></table>
+      </div>
+
+      <div id="faceRegsView" style="display: none;">
+        <h3 style="color: #fff; margin-bottom: 20px;">Manage Face Registrations</h3>
+        <div class="card">
+          <div style="display:flex; justify-content: space-between; align-items:center; gap: 10px;">
+            <div>
+              <p style="margin:0; color:#aaa;">View, disable, or reset student face registrations.</p>
+              <p id="faceRegsMsg" class="error-msg"></p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+              <input id="faceRegsSearch" placeholder="Search by name/roll/email" style="min-width: 240px;" />
+              <button id="faceRegsRefreshBtn" type="button">Refresh</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 15px; max-height: 520px; overflow-y: auto;">
+            <table style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Roll</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Registered</th>
+                  <th>Updated</th>
+                  <th>Disabled</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="faceRegsTableBody">
+                <tr><td colspan="7" style="text-align:center;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div id="profileView" style="display: none;">

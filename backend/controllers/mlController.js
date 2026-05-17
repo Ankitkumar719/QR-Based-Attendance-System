@@ -1,6 +1,7 @@
 import axios from "axios";
 import { User } from "../models/User.js";
 import { FaceVerification } from "../models/FaceVerification.js";
+import { FaceRegistrationLog } from "../models/FaceRegistrationLog.js";
 import { env } from "../config/env.js";
 import {
   validateShortagePayload,
@@ -108,6 +109,17 @@ export const registerFace = async (req, res) => {
       return res.status(403).json({ message: "You can only register your own face" });
     }
 
+    if (student.face?.disabled) {
+      console.warn("[mlController.registerFace] Face registration disabled for student", {
+        studentId: student._id,
+        disabledAt: student.face?.disabledAt,
+      });
+      return res.status(403).json({
+        message: "Face registration is disabled for this account. Contact administrator.",
+        code: "FACE_REGISTRATION_DISABLED",
+      });
+    }
+
     // Check if face ML service is configured and reachable.
     // In production, a localhost URL means the backend can't reach the ML service.
     if (!FACE_ML_SERVICE_URL) {
@@ -144,14 +156,61 @@ export const registerFace = async (req, res) => {
       maxAttempts: env.NODE_ENV === "production" ? 3 : 1,
     });
 
+    const descriptor =
+      mlResponse?.data?.descriptor ||
+      mlResponse?.data?.encoding ||
+      mlResponse?.data?.face_descriptor;
+
+    if (!Array.isArray(descriptor) || descriptor.length < 64) {
+      console.error("[mlController.registerFace] ML service did not return a descriptor", {
+        keys: Object.keys(mlResponse?.data || {}),
+        type: typeof descriptor,
+        length: Array.isArray(descriptor) ? descriptor.length : undefined,
+      });
+      return res.status(502).json({
+        message: "Face service did not return a face descriptor",
+        code: "FACE_DESCRIPTOR_MISSING",
+      });
+    }
+
+    const now = new Date();
+    const isUpdate = Array.isArray(student.face?.descriptor) && student.face.descriptor.length > 0;
+
+    student.face = {
+      descriptor,
+      registeredAt: student.face?.registeredAt || now,
+      updatedAt: now,
+      disabled: false,
+      disabledAt: undefined,
+      disabledReason: undefined,
+    };
+    await student.save();
+
+    await FaceRegistrationLog.create({
+      action: isUpdate ? "update" : "register",
+      student: student._id,
+      actor: req.user?._id,
+      actorRole: req.user?.role,
+      success: true,
+      message: isUpdate ? "Face updated" : "Face registered",
+      meta: {
+        mlServiceUrl: FACE_ML_SERVICE_URL,
+        descriptorLength: descriptor.length,
+      },
+    });
+
     console.info("[mlController.registerFace] Success", {
       studentId: student._id,
       response: mlResponse.data,
     });
 
     res.status(200).json({
-      message: "Face registered successfully",
+      message: isUpdate ? "Face updated successfully" : "Face registered successfully",
       data: mlResponse.data,
+      face: {
+        registeredAt: student.face?.registeredAt,
+        updatedAt: student.face?.updatedAt,
+      },
     });
   } catch (error) {
     // Detailed error logging
@@ -216,6 +275,23 @@ export const registerFace = async (req, res) => {
       status: error.response?.status,
       response: error.response?.data,
     });
+
+    try {
+      await FaceRegistrationLog.create({
+        action: "register",
+        student: req.user?._id,
+        actor: req.user?._id,
+        actorRole: req.user?.role,
+        success: false,
+        message: error.message,
+        meta: {
+          code: error.code,
+          status: error.response?.status,
+        },
+      });
+    } catch (e) {
+      // ignore logging failures
+    }
 
     res.status(error.response?.status || 500).json({
       message:
