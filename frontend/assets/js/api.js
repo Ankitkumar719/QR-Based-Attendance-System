@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://qr-based-attendance-system-zili.onrender.com";
+const API_BASE_URL = "http://34.207.138.147:5000";
 
 export const getToken = () => localStorage.getItem("token");
 export const getUser = () => {
