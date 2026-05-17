@@ -1,13 +1,4 @@
-const DEFAULT_API_BASE_URL =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"
-    ? "http://localhost:5000"
-    : "http://34.238.164.184:5000";
-
-export const API_BASE_URL =
-  window.API_BASE_URL ||
-  (window._env_ && window._env_.API_BASE_URL) ||
-  DEFAULT_API_BASE_URL;
+export const API_BASE_URL = "";
 
 export const getToken = () => localStorage.getItem("token");
 
@@ -32,85 +23,67 @@ const buildHeaders = (isJson = true) => {
   return headers;
 };
 
-const makeHttpError = (path, status, data) => {
-  const message = data?.message || data?.error || "Request failed";
-
-  const err = new Error(message);
-
-  err.isHttpError = true;
-  err.status = status;
-  err.data = data;
-  err.response = { status, data };
-  err.path = path;
-
-  return err;
-};
-
-export const apiGet = async (path) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: buildHeaders(false)
-  });
-
+const makeHttpError = async (res) => {
   const data = await res.json().catch(() => ({}));
-
-  if (!res.ok) {
-    throw makeHttpError(path, res.status, data);
-  }
-
-  return data;
+  return new Error(data.message || "Request failed");
 };
 
 export const apiPost = async (path, body) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(path, {
     method: "POST",
     headers: buildHeaders(true),
     body: JSON.stringify(body)
   });
 
-  const data = await res.json().catch(() => ({}));
-
   if (!res.ok) {
-    throw makeHttpError(path, res.status, data);
+    throw await makeHttpError(res);
   }
 
-  return data;
+  return res.json();
+};
+
+export const apiGet = async (path) => {
+  const res = await fetch(path, {
+    headers: buildHeaders(false)
+  });
+
+  if (!res.ok) {
+    throw await makeHttpError(res);
+  }
+
+  return res.json();
 };
 
 export const apiPut = async (path, body) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(path, {
     method: "PUT",
     headers: buildHeaders(true),
     body: JSON.stringify(body)
   });
 
-  const data = await res.json().catch(() => ({}));
-
   if (!res.ok) {
-    throw makeHttpError(path, res.status, data);
+    throw await makeHttpError(res);
   }
 
-  return data;
+  return res.json();
 };
 
 export const apiDelete = async (path) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
+  const res = await fetch(path, {
     method: "DELETE",
     headers: buildHeaders(false)
   });
 
-  const data = await res.json().catch(() => ({}));
-
   if (!res.ok) {
-    throw makeHttpError(path, res.status, data);
+    throw await makeHttpError(res);
   }
 
-  return data;
+  return res.json();
 };
 
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-
   window.location.href = "index.html";
 };
 
