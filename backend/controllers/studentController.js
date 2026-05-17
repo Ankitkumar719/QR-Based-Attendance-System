@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Class } from "../models/Class.js";
 import { AttendanceSession } from "../models/AttendanceSession.js";
 import { AttendanceRecord } from "../models/AttendanceRecord.js";
+import { FaceVerification } from "../models/FaceVerification.js";
 import { sendLowAttendanceEmail } from "../utils/mailer.js";
 
 export const myClasses = async (req, res, next) => {
@@ -122,56 +123,99 @@ export const studentDashboard = async (req, res, next) => {
   }
 };
 
-// POST /student/mark-attendance
+// POST /student/mark-attendance — dual verification (face token + live QR)
 export const markAttendance = async (req, res, next) => {
   try {
-    const { qrToken } = req.body;
+    const { qrToken, faceVerificationToken } = req.body;
+    const studentId = req.user._id;
 
-    console.debug('markAttendance called', { qrToken, userId: req.user?._id, url: req.originalUrl });
-
-    if (!qrToken) {
-      console.warn('markAttendance missing qrToken', { userId: req.user?._id });
+    if (!qrToken || typeof qrToken !== "string" || !qrToken.trim()) {
       return res.status(400).json({ message: "qrToken is required" });
+    }
+    if (!faceVerificationToken || typeof faceVerificationToken !== "string") {
+      return res.status(400).json({
+        message: "Face verification is required before marking attendance. Verify your face first.",
+        code: "FACE_VERIFICATION_REQUIRED",
+      });
+    }
+
+    const faceProof = await FaceVerification.consumeToken(
+      faceVerificationToken.trim(),
+      studentId
+    );
+    if (!faceProof) {
+      console.warn("markAttendance: invalid or expired face token", { studentId });
+      return res.status(403).json({
+        message: "Face verification expired or invalid. Please verify your face again.",
+        code: "FACE_VERIFICATION_INVALID",
+      });
     }
 
     const now = new Date();
     const session = await AttendanceSession.findOne({
-      qrToken,
+      qrToken: qrToken.trim(),
       isActive: true,
-      expiresAt: { $gt: now }
+      expiresAt: { $gt: now },
     });
 
     if (!session) {
-      console.warn('markAttendance: no active session found for token', { qrToken, now: new Date() });
-      return res.status(400).json({ message: "Invalid or expired session" });
+      console.warn("markAttendance: invalid or expired QR session", { studentId });
+      return res.status(400).json({ message: "Invalid or expired QR session" });
     }
 
-    // Prevent duplicate attendance
+    const { department, semester, section } = req.user;
+    const studentClasses = await Class.find({ department, semester, section }).select("_id");
+    const classIds = studentClasses.map((c) => c._id.toString());
+    if (!classIds.includes(session.classId.toString())) {
+      console.warn("markAttendance: session not for student class", {
+        studentId,
+        sessionClassId: session.classId,
+      });
+      return res.status(403).json({ message: "This QR session is not for your class" });
+    }
+
+    const existing = await AttendanceRecord.findOne({
+      sessionId: session._id,
+      studentId,
+    });
+    if (existing) {
+      return res.status(409).json({ message: "Attendance already marked for this session" });
+    }
+
     try {
       const record = await AttendanceRecord.create({
         sessionId: session._id,
-        studentId: req.user._id,
-        status: "present"
+        studentId,
+        status: "present",
       });
 
       const io = req.app.get("io");
       if (io) {
         io.to(`class:${session.classId}`).emit("attendance-updated", {
           sessionId: session._id,
-          studentId: req.user._id
+          studentId,
         });
       }
 
-      res.status(201).json(record);
+      console.info("markAttendance: dual verification success", {
+        studentId,
+        sessionId: session._id,
+      });
+
+      res.status(201).json({
+        message: "Attendance marked successfully (face + QR verified)",
+        record,
+        verification: { face: true, qr: true },
+      });
     } catch (e) {
       if (e.code === 11000) {
-        console.info('markAttendance: duplicate attendance', { sessionId: session._id, studentId: req.user._id });
-        return res.status(409).json({ message: "Attendance already marked" });
+        return res.status(409).json({ message: "Attendance already marked for this session" });
       }
-      console.error('markAttendance: unexpected error during create', e && e.message);
+      console.error("markAttendance: create failed", e.message);
       throw e;
     }
   } catch (err) {
+    console.error("markAttendance error:", err.message);
     next(err);
   }
 };

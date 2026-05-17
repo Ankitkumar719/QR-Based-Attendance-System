@@ -47,6 +47,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/analytics", analyticsRoutes);
+// ML routes: face recognition + attendance shortage prediction proxy
 app.use("/api/ml", mlRoutes);
 
 app.use(notFound);

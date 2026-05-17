@@ -26,6 +26,84 @@ const timeTable = document.getElementById("timeTable");
 const activeSessionsList = document.getElementById("activeSessionsList");
 const activeSessionBanner = document.getElementById("activeSessionBanner");
 const activeSessionBannerText = document.getElementById("activeSessionBannerText");
+const stepFaceLabel = document.getElementById("stepFaceLabel");
+const stepQrLabel = document.getElementById("stepQrLabel");
+const stepQrStatus = document.getElementById("stepQrStatus");
+const dualVerifyStatus = document.getElementById("dualVerifyStatus");
+const qrStepCard = document.getElementById("qrStepCard");
+
+/** Dual verification state (face AND QR required) */
+const dualVerifyState = {
+  faceVerified: false,
+  faceVerificationToken: null,
+  faceExpiresAt: null,
+};
+
+function resetDualVerification() {
+  dualVerifyState.faceVerified = false;
+  dualVerifyState.faceVerificationToken = null;
+  dualVerifyState.faceExpiresAt = null;
+  sessionStorage.removeItem("faceVerificationToken");
+  sessionStorage.removeItem("faceExpiresAt");
+  updateDualVerifyUI();
+  setQrStepEnabled(false);
+  if (typeof window.stopQrScan === "function") window.stopQrScan();
+}
+
+function setQrStepEnabled(enabled) {
+  if (qrStepCard) {
+    qrStepCard.style.opacity = enabled ? "1" : "0.45";
+    qrStepCard.style.pointerEvents = enabled ? "auto" : "none";
+  }
+  if (stepQrStatus) stepQrStatus.style.opacity = enabled ? "1" : "0.5";
+  if (qrTokenInput) {
+    qrTokenInput.disabled = !enabled;
+    qrTokenInput.placeholder = enabled
+      ? "Paste faculty QR token..."
+      : "Available after face verification...";
+  }
+  if (markBtn) markBtn.disabled = !enabled;
+}
+
+function updateDualVerifyUI() {
+  if (stepFaceLabel) {
+    if (dualVerifyState.faceVerified) {
+      stepFaceLabel.textContent = "✅ Verified";
+      stepFaceLabel.style.color = "#28a745";
+    } else {
+      stepFaceLabel.textContent = "⏳ Pending";
+      stepFaceLabel.style.color = "#ffc107";
+    }
+  }
+  if (stepQrLabel) {
+    if (dualVerifyState.faceVerified) {
+      stepQrLabel.textContent = "📱 Scan QR";
+      stepQrLabel.style.color = "#17a2b8";
+    } else {
+      stepQrLabel.textContent = "🔒 Locked";
+      stepQrLabel.style.color = "#666";
+    }
+  }
+  if (dualVerifyStatus) {
+    if (dualVerifyState.faceVerified && dualVerifyState.faceExpiresAt) {
+      const exp = new Date(dualVerifyState.faceExpiresAt);
+      dualVerifyStatus.textContent = `Face verified until ${exp.toLocaleTimeString()}. Complete QR scan before it expires.`;
+    } else {
+      dualVerifyStatus.textContent = "Verify your face to unlock QR scanning.";
+    }
+  }
+}
+
+function enableQrStepAfterFace(token, expiresAt) {
+  dualVerifyState.faceVerified = true;
+  dualVerifyState.faceVerificationToken = token;
+  dualVerifyState.faceExpiresAt = expiresAt;
+  sessionStorage.setItem("faceVerificationToken", token);
+  if (expiresAt) sessionStorage.setItem("faceExpiresAt", expiresAt);
+  updateDualVerifyUI();
+  setQrStepEnabled(true);
+  if (typeof window.startQrScan === "function") window.startQrScan();
+}
 
 const studentDateInput = document.getElementById("studentDate");
 if (studentDateInput) {
@@ -125,6 +203,7 @@ function switchView(view) {
   } else if (view === "mark") {
     markAttendanceView.style.display = "block";
     markAttendanceBtn?.classList.add("active");
+    resetDualVerification();
     loadActiveSessions().catch((err) => console.error("loadActiveSessions failed", err));
   } else if (view === "view") {
     viewAttendanceView.style.display = "block";
@@ -317,9 +396,9 @@ async function loadActiveSessions() {
             </div>
           </div>
           <div style="text-align: right;">
-            <button onclick="markSessionAttendance('${session.qrToken}', this)" 
+            <button onclick="switchView('mark')" 
                     style="background: #28a745; padding: 10px 20px; font-size: 1rem; cursor: pointer;">
-              📝 Mark Attendance
+              🔐 Start Dual Verification
             </button>
           </div>
         </div>
@@ -375,38 +454,6 @@ function startSessionTimers() {
   }, 1000);
 }
 
-// Mark attendance for a specific session
-window.markSessionAttendance = async function(qrToken, button) {
-  const originalText = button.innerHTML;
-  button.innerHTML = '⏳ Marking...';
-  button.disabled = true;
-  
-  try {
-    await apiPost("/api/student/mark-attendance", { qrToken });
-    button.innerHTML = '✅ Marked!';
-    button.style.background = '#28a745';
-    
-    // Refresh the sessions list and dashboard after a short delay
-    setTimeout(async () => {
-      await loadActiveSessions();
-      await loadDashboard();
-      await loadTodayAttendance(); // Refresh verification section
-      await checkActiveSessionsForBanner();
-    }, 1000);
-    
-  } catch (err) {
-    button.innerHTML = originalText;
-    button.disabled = false;
-    
-    if (err.message.includes('already marked')) {
-      alert('Attendance already marked for this session!');
-      await loadActiveSessions();
-    } else {
-      alert(`Error: ${err.message}`);
-    }
-  }
-};
-
 // Check for active sessions and show banner on dashboard
 async function checkActiveSessionsForBanner() {
   if (!activeSessionBanner || !activeSessionBannerText) return;
@@ -445,22 +492,45 @@ async function handleMarkAttendance(token) {
   if (!token) return;
   if (!markMsg) return;
 
-  markMsg.textContent = "Verifying token...";
+  if (!dualVerifyState.faceVerified || !dualVerifyState.faceVerificationToken) {
+    markMsg.style.color = "red";
+    markMsg.textContent = "Complete face verification (Step 1) before scanning QR.";
+    return;
+  }
+
+  if (dualVerifyState.faceExpiresAt && new Date(dualVerifyState.faceExpiresAt) < new Date()) {
+    markMsg.style.color = "red";
+    markMsg.textContent = "Face verification expired. Please verify your face again.";
+    resetDualVerification();
+    return;
+  }
+
+  markMsg.textContent = "Verifying face + QR...";
   markMsg.style.color = "orange";
+  if (markBtn) markBtn.disabled = true;
 
   try {
-    console.debug('student.handleMarkAttendance: sending mark request', { qrToken: token, authTokenPresent: !!localStorage.getItem('token') });
-    await apiPost("/api/student/mark-attendance", { qrToken: token });
+    await apiPost("/api/student/mark-attendance", {
+      qrToken: token,
+      faceVerificationToken: dualVerifyState.faceVerificationToken,
+    });
     markMsg.style.color = "green";
-    markMsg.textContent = "Attendance marked successfully!";
-    qrTokenInput.value = token; // show the token that was used
-    await loadDashboard(); // Refresh dashboard stats
-    await loadTodayAttendance(); // Refresh verification section
-    await loadActiveSessions(); // Refresh active sessions
+    markMsg.textContent = "Attendance marked (face + QR verified)!";
+    if (qrTokenInput) qrTokenInput.value = token;
+    resetDualVerification();
+    await loadDashboard();
+    await loadTodayAttendance();
+    await loadActiveSessions();
+    await checkActiveSessionsForBanner();
   } catch (err) {
-    console.error('student.handleMarkAttendance error', err);
+    console.error("student.handleMarkAttendance error", err);
     markMsg.style.color = "red";
-    markMsg.textContent = `Error: ${err.message}. Please try again.`;
+    markMsg.textContent = err.message || "Failed to mark attendance.";
+    if (err.message?.includes("Face verification")) {
+      resetDualVerification();
+    }
+  } finally {
+    if (markBtn && dualVerifyState.faceVerified) markBtn.disabled = false;
   }
 }
 
@@ -491,7 +561,14 @@ if (window.Html5Qrcode) {
   let isScanning = false;
 
   const startScan = () => {
-    if (isScanning) return; // Already scanning
+    if (!dualVerifyState.faceVerified) {
+      if (markMsg) {
+        markMsg.textContent = "Verify your face first to unlock the QR scanner.";
+        markMsg.style.color = "orange";
+      }
+      return;
+    }
+    if (isScanning) return;
     isScanning = true;
     
     // Try to get available cameras first
@@ -569,21 +646,25 @@ if (window.Html5Qrcode) {
 
   const stopScan = () => {
     if (isScanning && qrScanner.isScanning) {
-        qrScanner.stop().then(() => isScanning = false).catch(err => {
-            console.error("Failed to stop scanner on view switch", err);
-            isScanning = false; // ensure state is reset
-        });
+      qrScanner.stop().then(() => (isScanning = false)).catch((err) => {
+        console.error("Failed to stop scanner", err);
+        isScanning = false;
+      });
+    } else {
+      isScanning = false;
     }
   };
 
-  // Use a MutationObserver to start/stop scanner when view changes
+  window.startQrScan = startScan;
+  window.stopQrScan = stopScan;
+
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.attributeName === 'style') {
-        if (markAttendanceView.style.display === 'block') {
-          markMsg.textContent = '';
-          qrTokenInput.value = '';
-          startScan();
+      if (mutation.attributeName === "style") {
+        if (markAttendanceView.style.display === "block") {
+          if (markMsg) markMsg.textContent = "";
+          if (qrTokenInput) qrTokenInput.value = "";
+          resetDualVerification();
         } else {
           stopScan();
         }
@@ -591,7 +672,7 @@ if (window.Html5Qrcode) {
     });
   });
 
-  observer.observe(markAttendanceView, { attributes: true });
+  if (markAttendanceView) observer.observe(markAttendanceView, { attributes: true });
 }
 
 async function loadTimeTable() {
@@ -710,61 +791,63 @@ function findUpcomingClass(timeTableData) {
     showTodaySchedule(timeTableData, dayOfWeek, currentTime);
 }
 
-// Facial Recognition Attendance
+// Step 1: Face verification only (unlocks QR step)
 const facialAttendanceBtn = document.getElementById("facialAttendanceBtn");
 const facialReader = document.getElementById("facialReader");
 const facialMsg = document.getElementById("facialMsg");
 
 facialAttendanceBtn?.addEventListener("click", () => {
-  startFacialAttendance().catch((err) => console.error("startFacialAttendance failed", err));
+  verifyFaceForAttendance().catch((err) => console.error("verifyFaceForAttendance failed", err));
 });
 
-async function startFacialAttendance() {
-    facialMsg.textContent = "";
+async function verifyFaceForAttendance() {
+  if (!facialMsg || !facialReader) return;
+
+  facialMsg.textContent = "Opening camera...";
+  facialMsg.style.color = "orange";
+  facialAttendanceBtn.disabled = true;
+
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
     facialReader.style.display = "block";
-    
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        facialReader.srcObject = stream;
-        facialReader.play();
-        
-        // Capture image after 3 seconds
-        setTimeout(async () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = facialReader.videoWidth;
-            canvas.height = facialReader.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(facialReader, 0, 0);
-            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
-            
-            // Stop camera
-            stream.getTracks().forEach(track => track.stop());
-            facialReader.style.display = "none";
-            
-            // Get active session (assuming first one for simplicity)
-            const sessions = await apiGet("/api/student/active-sessions");
-            if (!sessions || sessions.length === 0) {
-                facialMsg.textContent = "No active attendance sessions.";
-                return;
-            }
-            const session = sessions[0]; // Use first active session
-            
-            // Send to ML service
-            await apiPost("/api/ml/recognize-face", { image: imageData, sessionId: session.sessionId || session._id });
-            facialMsg.textContent = "Attendance marked successfully!";
-            facialMsg.style.color = "green";
-            
-            // Refresh
-            await loadActiveSessions();
-            await loadDashboard();
-            await loadTodayAttendance();
-        }, 3000);
-        
-    } catch (error) {
-        console.error("Facial recognition error", error);
-        facialMsg.textContent = "Error accessing camera or marking attendance.";
-        facialReader.style.display = "none";
+    facialReader.srcObject = stream;
+    await facialReader.play();
+
+    facialMsg.textContent = "Hold still — capturing in 3 seconds...";
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = facialReader.videoWidth;
+    canvas.height = facialReader.videoHeight;
+    canvas.getContext("2d").drawImage(facialReader, 0, 0);
+    const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
+
+    stream.getTracks().forEach((t) => t.stop());
+    stream = null;
+    facialReader.style.display = "none";
+
+    facialMsg.textContent = "Verifying face...";
+
+    const result = await apiPost("/api/ml/verify-face", { image: imageData });
+    if (!result?.verified || !result.faceVerificationToken) {
+      throw new Error(result?.message || "Face verification failed");
     }
+
+    enableQrStepAfterFace(result.faceVerificationToken, result.expiresAt);
+    facialMsg.textContent = result.message || "Face verified! Scan the faculty QR code.";
+    facialMsg.style.color = "green";
+  } catch (error) {
+    console.error("Face verification error", error);
+    facialMsg.textContent = error.message || "Face verification failed. Try again.";
+    facialMsg.style.color = "red";
+    resetDualVerification();
+  } finally {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    facialReader.style.display = "none";
+    facialAttendanceBtn.disabled = false;
+  }
 }
 
 function showTodaySchedule(timeTableData, dayOfWeek, currentTime) {
@@ -846,7 +929,9 @@ async function registerFace() {
 
         const profile = await apiGet("/api/student/profile");
         if (!profile) return;
-        await apiPost("/api/ml/register-face", { studentId: profile.studentId, image: imageData });
+        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const studentIdForMl = storedUser.rollNo || profile.studentId;
+        await apiPost("/api/ml/register-face", { studentId: studentIdForMl, image: imageData });
         registerMsg.textContent = "Face registered successfully!";
         registerMsg.style.color = "green";
       } catch (error) {

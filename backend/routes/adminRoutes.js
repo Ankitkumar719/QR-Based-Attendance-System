@@ -35,6 +35,10 @@ import {
   listUnassignedStudents
 } from "../controllers/adminController.js";
 import { report, exportCsv } from "../controllers/analyticsController.js";
+import {
+  retrainAttendanceModel,
+  mlTrainingStatus,
+} from "../controllers/mlAdminController.js";
 
 const router = express.Router();
 
@@ -93,5 +97,9 @@ router.post("/graduate", graduateStudents);
 // Admin analytics shortcuts
 router.get("/analytics/report", report);
 router.get("/analytics/export", exportCsv);
+
+// ML shortage model (proxied to Flask on port 8000)
+router.get("/ml/training-status", mlTrainingStatus);
+router.post("/ml/retrain", retrainAttendanceModel);
 
 export default router;

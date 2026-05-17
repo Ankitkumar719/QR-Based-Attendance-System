@@ -1,12 +1,24 @@
-import express from 'express';
-import { registerFace, recognizeFace } from '../controllers/mlController.js';
+import express from "express";
+import { authMiddleware, requireRole } from "../middleware/authMiddleware.js";
+import {
+  registerFace,
+  recognizeFace,
+  verifyFace,
+  predictShortage,
+} from "../controllers/mlController.js";
 
 const router = express.Router();
 
-// Register face for a student
-router.post('/register-face', registerFace);
+router.post("/register-face", authMiddleware, requireRole("student"), registerFace);
+router.post("/verify-face", authMiddleware, requireRole("student"), verifyFace);
+router.post("/recognize-face", recognizeFace);
 
-// Recognize face for attendance
-router.post('/recognize-face', recognizeFace);
+// Attendance shortage risk (Flask ML proxy — authenticated)
+router.post(
+  "/predict-shortage",
+  authMiddleware,
+  requireRole("student", "faculty", "admin"),
+  predictShortage
+);
 
 export default router;

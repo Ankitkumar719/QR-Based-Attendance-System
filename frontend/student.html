@@ -87,8 +87,25 @@
       </div>
 
       <div id="markAttendanceView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 20px;">Mark Attendance</h3>
-        
+        <h3 style="color: #fff; margin-bottom: 10px;">Mark Attendance</h3>
+        <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">
+          Secure dual verification: <strong>Face</strong> first, then <strong>Faculty QR</strong>. Both are required.
+        </p>
+
+        <div class="card" style="margin-bottom: 20px; padding: 15px;">
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div id="stepFaceStatus" style="flex: 1; min-width: 140px;">
+              <span style="color: #888;">Step 1 — Face</span>
+              <p id="stepFaceLabel" style="margin: 5px 0 0; font-weight: bold; color: #ffc107;">⏳ Pending</p>
+            </div>
+            <div id="stepQrStatus" style="flex: 1; min-width: 140px; opacity: 0.5;">
+              <span style="color: #888;">Step 2 — QR</span>
+              <p id="stepQrLabel" style="margin: 5px 0 0; font-weight: bold; color: #666;">🔒 Locked</p>
+            </div>
+          </div>
+          <p id="dualVerifyStatus" style="margin: 12px 0 0; font-size: 0.85rem; color: #888;"></p>
+        </div>
+
         <!-- Active Sessions Section -->
         <div id="activeSessionsSection" class="card" style="margin-bottom: 20px;">
           <h4 style="color: #28a745; margin-bottom: 15px;">🟢 Active Attendance Sessions</h4>
@@ -97,38 +114,35 @@
           </div>
         </div>
         
-        <!-- Manual QR Entry Section -->
-        <div class="card">
-          <h4 style="color: #fff; margin-bottom: 15px;">📱 Scan QR Code or Enter Token</h4>
+        <div class="card" style="margin-bottom: 20px;">
+          <h4 style="color: #17a2b8; margin-bottom: 10px;">Step 1 — Verify Your Face</h4>
+          <p style="color: #888; font-size: 0.85rem; margin-bottom: 12px;">
+            Register your face in Profile first if you have not already.
+          </p>
+          <button id="facialAttendanceBtn" type="button" style="background: #17a2b8; padding: 12px 30px; cursor: pointer;">
+            📷 Verify Face
+          </button>
+          <video id="facialReader" style="width: 300px; height: 300px; margin-top: 10px; display: none; border-radius: 8px;"></video>
+          <p id="facialMsg" class="error-msg" style="margin-top: 10px;"></p>
+        </div>
+
+        <div id="qrStepCard" class="card" style="opacity: 0.45; pointer-events: none;">
+          <h4 style="color: #fff; margin-bottom: 15px;">Step 2 — Scan Faculty QR Code</h4>
           <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
             <div>
               <label>Enter QR Token</label>
-              <input id="qrTokenInput" placeholder="Paste token here..." />
-              <button id="markBtn">Mark Attendance</button>
+              <input id="qrTokenInput" placeholder="Available after face verification..." disabled />
+              <button id="markBtn" type="button" disabled>Submit QR &amp; Mark Attendance</button>
               <p id="markMsg" class="error-msg"></p>
             </div>
             <div>
               <label>Or Scan QR Code</label>
               <div id="qrReader" style="width: 300px; height: 300px; margin-top: 10px;"></div>
               <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
-                💡 <strong>Tips:</strong> Hold steady, ensure good lighting, and keep QR code within the box. 
-                If scanning from a phone screen, increase brightness.
+                Scan the live QR shown by your faculty. Expired QRs are rejected automatically.
               </p>
             </div>
           </div>
-        </div>
-        
-        <!-- Facial Recognition Section -->
-        <div class="card" style="margin-top: 20px;">
-          <h4 style="color: #fff; margin-bottom: 15px;">🤖 Facial Recognition Attendance</h4>
-          <p style="color: #888; font-size: 0.9rem; margin-bottom: 15px;">
-            Use your face to mark attendance automatically. Make sure your face is registered first.
-          </p>
-          <button id="facialAttendanceBtn" style="background: #17a2b8; padding: 12px 30px; font-size: 1rem; cursor: pointer;">
-            📷 Start Facial Attendance
-          </button>
-          <video id="facialReader" style="width: 300px; height: 300px; margin-top: 10px; display: none;"></video>
-          <p id="facialMsg" class="error-msg"></p>
         </div>
       </div>
 

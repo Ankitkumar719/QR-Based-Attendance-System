@@ -134,6 +134,14 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# ML artifacts
+ml/attendance_model.pkl
+ml/*.pkl
+ml/training_meta.json
+ml/.env
+ml/venv/
+ml/.venv/
+
 # Node and environment ignores (frontend/backend)
 node_modules/
 frontend/node_modules/

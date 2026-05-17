@@ -12,6 +12,14 @@ export const env = {
   EMAIL_USER: process.env.EMAIL_USER || "",
   EMAIL_PASS: process.env.EMAIL_PASS || "",
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:5500",
+  /** Flask attendance shortage predictor (ml/app.py) */
+  ML_PREDICT_URL: process.env.ML_PREDICT_URL || "http://localhost:8000",
+  ML_TRAIN_SECRET: process.env.ML_TRAIN_SECRET || "",
+  /** Face recognition Python service (backend/ml/) */
+  FACE_ML_SERVICE_URL:
+    process.env.FACE_ML_SERVICE_URL ||
+    process.env.PYTHON_SERVICE_URL ||
+    "http://localhost:5000",
   DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL || "admin@example.com",
   DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || "admin123",
   DEFAULT_ADMIN_NAME: process.env.DEFAULT_ADMIN_NAME || "Super Admin"
