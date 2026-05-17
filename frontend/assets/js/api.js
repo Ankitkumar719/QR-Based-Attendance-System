@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://34.207.138.147:5000";
+const API_BASE_URL = "https://api.attendsmart.in";
 
 export const getToken = () => localStorage.getItem("token");
 export const getUser = () => {
