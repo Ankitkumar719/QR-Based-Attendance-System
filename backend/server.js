@@ -24,7 +24,22 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({ origin: "*", credentials: true }));
+// CORS CONFIG
+const allowedOrigins = [
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "http://attendsmart.in",
+  "https://attendsmart.in",
+  "http://34.238.164.184:5000"
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true
+  })
+);
+
 app.use(express.json());
 app.use(morgan("dev"));
 
@@ -36,18 +51,17 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(frontendDir, "index.html"));
 });
 
-// Simple health check for the API
+// Health check
 app.get("/api/health", (req, res) => {
   res.json({ message: "Smart Attendance System API" });
 });
 
-// REST endpoints - all under /api prefix
+// REST endpoints
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/faculty", facultyRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/analytics", analyticsRoutes);
-// ML routes: face recognition + attendance shortage prediction proxy
 app.use("/api/ml", mlRoutes);
 
 app.use(notFound);
@@ -58,22 +72,31 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
-// Attach io instance to app so controllers can use it
+// Attach io instance to app
 app.set("io", io);
 
-// Socket.IO auth using JWT from handshake.auth.token
+// Socket auth
 io.use((socket, next) => {
   try {
     const token = socket.handshake.auth?.token;
-    if (!token) return next(new Error("No token"));
+
+    if (!token) {
+      return next(new Error("No token"));
+    }
 
     const decoded = verifyToken(token);
-    socket.user = { id: decoded.id, role: decoded.role };
+
+    socket.user = {
+      id: decoded.id,
+      role: decoded.role
+    };
+
     next();
   } catch (err) {
     next(new Error("Invalid token"));
@@ -83,21 +106,22 @@ io.use((socket, next) => {
 io.on("connection", (socket) => {
   console.log("Socket connected:", socket.id, "role:", socket.user?.role);
 
-  // Faculty (or admin) can join a class room to receive updates
   socket.on("join-class", ({ classId }) => {
     if (!classId) return;
+
     const room = `class:${classId}`;
     socket.join(room);
   });
 
   socket.on("leave-class", ({ classId }) => {
     if (!classId) return;
+
     const room = `class:${classId}`;
     socket.leave(room);
   });
 
   socket.on("disconnect", () => {
-    // optional cleanup/logging
+    console.log("Socket disconnected:", socket.id);
   });
 });
 
@@ -106,25 +130,29 @@ const PORT = process.env.PORT || env.PORT;
 
 const ensureDefaultAdmin = async () => {
   const existingAdmin = await User.findOne({ role: "admin" });
+
   if (existingAdmin) {
     console.log(`Admin account already exists: ${existingAdmin.email}`);
     return;
   }
 
   const passwordHash = await bcrypt.hash(env.DEFAULT_ADMIN_PASSWORD, 10);
+
   await User.create({
     name: env.DEFAULT_ADMIN_NAME,
     email: env.DEFAULT_ADMIN_EMAIL.toLowerCase(),
     passwordHash,
     role: "admin"
   });
+
   console.log(`Default admin created: ${env.DEFAULT_ADMIN_EMAIL}`);
 };
 
 const startServer = async () => {
   await connectDB();
   await ensureDefaultAdmin();
-  server.listen(PORT, () => {
+
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
   });
 };
@@ -134,7 +162,7 @@ startServer().catch((err) => {
   process.exit(1);
 });
 
-// Global error handlers to prevent crashes
+// Global error handlers
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
