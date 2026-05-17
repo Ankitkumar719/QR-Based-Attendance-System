@@ -29,8 +29,7 @@ const allowedOrigins = [
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://attendsmart.in",
-  "https://attendsmart.in",
-  "http://34.238.164.184:5000"
+  "https://attendsmart.in"
 ];
 
 app.use(
