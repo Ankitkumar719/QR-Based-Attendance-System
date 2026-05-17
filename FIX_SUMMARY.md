@@ -303,7 +303,7 @@ Set ENV var: `FACE_ML_SERVICE_URL=http://face-service:5001`
 2 separate services:
 - Service 1 (Node.js): Port 5000
 - Service 2 (Flask): Port 5001
-- Env var: `FACE_ML_SERVICE_URL=https://smart-face.onrender.com`
+- No separate face-service required on Render (local Python worker inside backend).
 
 ### AWS Deployment
 - Use separate Lambda functions or EC2 instances

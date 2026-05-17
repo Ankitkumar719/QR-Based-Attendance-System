@@ -16,15 +16,10 @@ export const env = {
   /** Flask attendance shortage predictor (ml/app.py) */
   ML_PREDICT_URL: process.env.ML_PREDICT_URL || "http://localhost:8000",
   ML_TRAIN_SECRET: process.env.ML_TRAIN_SECRET || "",
-  /** Face recognition Python service (backend/ml/face_recognition_service.py)
-   *  Must run on separate port. Defaults to http://localhost:5001
-   *  For production: set FACE_SERVICE_URL (or FACE_ML_SERVICE_URL) explicitly
+  /** Face recognition runs locally via Python worker (backend/ml/face_worker.py).
+   * No separate deployed service is required.
    */
-  FACE_ML_SERVICE_URL:
-    process.env.FACE_SERVICE_URL ||
-    process.env.FACE_ML_SERVICE_URL ||
-    process.env.PYTHON_SERVICE_URL ||
-    "http://localhost:5001",
+  FACE_ML_SERVICE_URL: process.env.FACE_ML_SERVICE_URL || process.env.FACE_SERVICE_URL || "",
   FACE_ML_TIMEOUT_MS: Number(process.env.FACE_ML_TIMEOUT_MS || 30000),
   DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL || "admin@example.com",
   DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || "admin123",

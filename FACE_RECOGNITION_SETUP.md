@@ -157,40 +157,24 @@ Each `.npy` file contains a 128-dimensional numpy array (face encoding).
 2. Frontend requests camera permission
 3. Frontend captures image → converts to base64
 4. Frontend sends to: `POST /api/ml/register-face`
-5. Backend (Node.js) validates and forwards to Python service
-6. Python service (Flask):
+5. Backend (Node.js) validates and invokes the local Python worker (`backend/ml/face_worker.py`)
+6. Python worker:
    - Decodes base64 image
    - Detects face using `face_recognition` library
-   - Generates 128-D face encoding
-   - Saves as `.npy` file
-   - Returns 200 OK
+   - Generates 128-D face encoding (descriptor)
+   - Returns descriptor to backend for MongoDB storage
 7. Frontend shows: "✅ Face registered successfully!"
 
 ## Production Deployment (Render, AWS)
 
-### Render.com
+### Render.com (Free plan-friendly: single service)
 
-Create two separate services:
+This project supports running face recognition inside the Node.js backend service by spawning a local Python worker.
 
-**Service 1: Backend (Node.js)**
-```
-Build Command: npm install
-Start Command: npm start
-Port: 5000
-Env Vars: FACE_ML_SERVICE_URL=<Service2_URL>
-```
-
-**Service 2: Face Service (Python)**
-```
-Build Command: pip install -r requirements.txt face-recognition pillow
-Start Command: python backend/ml/face_recognition_service.py
-Port: 5001
-```
-
-Then set in Service 1 env:
-```
-FACE_ML_SERVICE_URL=https://smart-face-service.onrender.com
-```
+Recommended Render setup:
+- Deploy using Docker (`Dockerfile` + `render.yaml`).
+- Set `MONGO_URI` in Render Environment Variables.
+- Optional: `FACE_PYTHON_BIN=python3` and `FACE_ML_TIMEOUT_MS=30000`.
 
 ### AWS (Lambda + RDS)
 

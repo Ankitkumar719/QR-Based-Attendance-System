@@ -1,25 +1,15 @@
 services:
-  # Node.js API (serves frontend static files + REST API)
+  # Single-service deployment (Node.js backend + local Python worker)
+  # Uses Docker so we can install the Python face-recognition dependencies inside the same service.
   - type: web
     name: smart-attendance-backend
-    env: node
-    rootDir: backend
-    buildCommand: npm ci
-    startCommand: npm start
+    env: docker
+    rootDir: .
+    dockerfilePath: ./Dockerfile
     autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      # IMPORTANT: Set this to your face-service deployed URL after you create it.
-      # Example: https://smart-face-service.onrender.com
-      - key: FACE_SERVICE_URL
-        sync: false
-
-  # Python face recognition service (Flask)
-  - type: web
-    name: smart-face-service
-    env: python
-    rootDir: .
-    buildCommand: pip install -r ml/requirements.txt face-recognition pillow
-    startCommand: python backend/ml/face_recognition_service.py
-    autoDeploy: true
+      # Python binary inside the container
+      - key: FACE_PYTHON_BIN
+        value: python3

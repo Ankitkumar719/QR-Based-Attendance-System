@@ -3,6 +3,7 @@ import { User } from "../models/User.js";
 import { FaceVerification } from "../models/FaceVerification.js";
 import { FaceRegistrationLog } from "../models/FaceRegistrationLog.js";
 import { env } from "../config/env.js";
+import { runFaceWorker, assertNoExternalFaceService } from "../utils/facePythonClient.js";
 import {
   validateShortagePayload,
   requestShortagePrediction,
@@ -120,50 +121,31 @@ export const registerFace = async (req, res) => {
       });
     }
 
-    // Check if face ML service is configured and reachable.
-    // In production, a localhost URL means the backend can't reach the ML service.
-    if (!FACE_ML_SERVICE_URL) {
-      console.error("[mlController.registerFace] Face ML service URL missing");
-      return res.status(503).json({
-        message: "Face recognition service URL is not configured.",
-        code: "FACE_SERVICE_UNAVAILABLE",
-      });
-    }
+    assertNoExternalFaceService();
 
-    if (env.NODE_ENV === "production" && isLocalhostUrl(FACE_ML_SERVICE_URL)) {
-      console.error(
-        "[mlController.registerFace] Face ML service misconfigured (localhost in prod)",
-        { url: FACE_ML_SERVICE_URL }
-      );
-      return res.status(503).json({
-        message:
-          "Face recognition service is not configured for production. Set FACE_SERVICE_URL.",
-        code: "FACE_SERVICE_UNAVAILABLE",
-      });
-    }
-
-    console.info("[mlController.registerFace] Calling face ML service", {
+    console.info("[mlController.registerFace] Running local face worker", {
       studentId: student._id,
-      serviceUrl: FACE_ML_SERVICE_URL,
       imageSize: image.length,
     });
 
-    const endpoint = `${FACE_ML_SERVICE_URL}/register_face`;
-    const payload = { student_id: student.rollNo || String(student._id), image };
+    const workerOut = await runFaceWorker(
+      { action: "register", image },
+      { timeoutMs: FACE_ML_TIMEOUT_MS }
+    );
 
-    const mlResponse = await postToFaceMlWithRetry(endpoint, payload, {
-      timeoutMs: FACE_ML_TIMEOUT_MS,
-      maxAttempts: env.NODE_ENV === "production" ? 3 : 1,
-    });
+    if (!workerOut.ok) {
+      const status = workerOut.status || 500;
+      return res.status(status).json({
+        message: workerOut.error || "Face registration failed",
+        code: status === 400 ? "FACE_DETECTION_FAILED" : "FACE_SERVICE_UNAVAILABLE",
+      });
+    }
 
-    const descriptor =
-      mlResponse?.data?.descriptor ||
-      mlResponse?.data?.encoding ||
-      mlResponse?.data?.face_descriptor;
+    const descriptor = workerOut.descriptor;
 
     if (!Array.isArray(descriptor) || descriptor.length < 64) {
-      console.error("[mlController.registerFace] ML service did not return a descriptor", {
-        keys: Object.keys(mlResponse?.data || {}),
+      console.error("[mlController.registerFace] Face worker did not return a descriptor", {
+        keys: Object.keys(workerOut || {}),
         type: typeof descriptor,
         length: Array.isArray(descriptor) ? descriptor.length : undefined,
       });
@@ -194,19 +176,17 @@ export const registerFace = async (req, res) => {
       success: true,
       message: isUpdate ? "Face updated" : "Face registered",
       meta: {
-        mlServiceUrl: FACE_ML_SERVICE_URL,
         descriptorLength: descriptor.length,
       },
     });
 
     console.info("[mlController.registerFace] Success", {
       studentId: student._id,
-      response: mlResponse.data,
+      descriptorLength: descriptor.length,
     });
 
     res.status(200).json({
       message: isUpdate ? "Face updated successfully" : "Face registered successfully",
-      data: mlResponse.data,
       face: {
         registeredAt: student.face?.registeredAt,
         updatedAt: student.face?.updatedAt,
@@ -214,28 +194,6 @@ export const registerFace = async (req, res) => {
     });
   } catch (error) {
     // Detailed error logging
-    if (error.code === "ECONNREFUSED") {
-      console.error("[mlController.registerFace] Face ML service not running", {
-        url: FACE_ML_SERVICE_URL,
-        error: error.message,
-      });
-      return res.status(503).json({
-        message: "Face recognition service is not running",
-        code: "FACE_SERVICE_NOT_RUNNING",
-      });
-    }
-
-    if (error.code === "ENOTFOUND" || error.code === "EHOSTUNREACH") {
-      console.error("[mlController.registerFace] Face ML service unreachable", {
-        url: FACE_ML_SERVICE_URL,
-        error: error.message,
-      });
-      return res.status(503).json({
-        message: "Face recognition service is unreachable",
-        code: "FACE_SERVICE_UNREACHABLE",
-      });
-    }
-
     if (error.response?.status === 400) {
       const mlError = error.response.data?.error || "Face detection failed";
       console.warn("[mlController.registerFace] Face detection error", {
@@ -248,23 +206,9 @@ export const registerFace = async (req, res) => {
       });
     }
 
-    if (error.response?.status === 404) {
-      console.warn("[mlController.registerFace] Service endpoint not found", {
-        endpoint: `${FACE_ML_SERVICE_URL}/register_face`,
-      });
-      return res.status(503).json({
-        message: "Face registration endpoint not available on ML service",
-        code: "ENDPOINT_NOT_FOUND",
-      });
-    }
-
-    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
-      console.error("[mlController.registerFace] Timeout", {
-        url: FACE_ML_SERVICE_URL,
-        error: error.message,
-      });
+    if (error.code === "FACE_WORKER_TIMEOUT") {
       return res.status(504).json({
-        message: "Face recognition service timed out",
+        message: "Face recognition timed out",
         code: "FACE_SERVICE_TIMEOUT",
       });
     }
@@ -314,34 +258,25 @@ export const verifyFace = async (req, res) => {
       return res.status(400).json({ message: "image is required" });
     }
 
-    if (!FACE_ML_SERVICE_URL) {
-      console.error("[mlController.verifyFace] Face ML service URL missing");
-      return res.status(503).json({
-        message: "Face recognition service URL is not configured.",
-        code: "FACE_SERVICE_UNAVAILABLE",
-      });
-    }
+    assertNoExternalFaceService();
 
-    if (env.NODE_ENV === "production" && isLocalhostUrl(FACE_ML_SERVICE_URL)) {
-      console.error(
-        "[mlController.verifyFace] Face ML service misconfigured (localhost in prod)",
-        { url: FACE_ML_SERVICE_URL }
-      );
-      return res.status(503).json({
-        message:
-          "Face recognition service is not configured for production. Set FACE_SERVICE_URL.",
-        code: "FACE_SERVICE_UNAVAILABLE",
-      });
-    }
-
-    const endpoint = `${FACE_ML_SERVICE_URL}/recognize_face`;
-    const response = await postToFaceMlWithRetry(
-      endpoint,
-      { image },
-      { timeoutMs: FACE_ML_TIMEOUT_MS, maxAttempts: env.NODE_ENV === "production" ? 3 : 1 }
+    const out = await runFaceWorker(
+      { action: "recognize", image, tolerance: 0.6 },
+      { timeoutMs: FACE_ML_TIMEOUT_MS }
     );
 
-    const { student_id, confidence } = response.data;
+    if (!out.ok) {
+      const status = out.status || 500;
+      if (status === 400) {
+        return res.status(400).json({ message: out.error || "Face detection failed", code: "FACE_DETECTION_FAILED" });
+      }
+      if (status === 404) {
+        return res.status(404).json({ message: out.error || "Face not recognized", verified: false });
+      }
+      return res.status(503).json({ message: out.error || "Face recognition service unavailable", code: "FACE_SERVICE_UNAVAILABLE" });
+    }
+
+    const { student_id, confidence } = out;
     const CONFIDENCE_THRESHOLD = 0.6;
 
     if (confidence < CONFIDENCE_THRESHOLD) {
@@ -396,21 +331,7 @@ export const verifyFace = async (req, res) => {
       response: error.response?.data,
     });
 
-    if (error.code === "ECONNREFUSED") {
-      return res.status(503).json({
-        message: "Face recognition service is not running",
-        code: "FACE_SERVICE_NOT_RUNNING",
-      });
-    }
-
-    if (error.code === "ENOTFOUND" || error.code === "EHOSTUNREACH") {
-      return res.status(503).json({
-        message: "Face recognition service is unreachable",
-        code: "FACE_SERVICE_UNREACHABLE",
-      });
-    }
-
-    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+    if (error.code === "FACE_WORKER_TIMEOUT") {
       return res.status(504).json({
         message: "Face recognition service timed out",
         code: "FACE_SERVICE_TIMEOUT",
@@ -429,20 +350,17 @@ export const verifyFace = async (req, res) => {
 
 export const faceServiceHealth = async (req, res) => {
   try {
-    if (!FACE_ML_SERVICE_URL) {
-      return res.status(503).json({
-        ok: false,
-        message: "Face recognition service URL is not configured.",
-        code: "FACE_SERVICE_UNAVAILABLE",
-      });
-    }
-
-    const endpoint = `${FACE_ML_SERVICE_URL}/health`;
-    const r = await axios.get(endpoint, { timeout: Math.min(10_000, FACE_ML_TIMEOUT_MS) });
-    return res.status(200).json({ ok: true, serviceUrl: FACE_ML_SERVICE_URL, data: r.data });
+    const out = await runFaceWorker({ action: "health" }, { timeoutMs: 5_000 });
+    return res.status(200).json({
+      ok: true,
+      mode: "local-python",
+      pythonBin: process.env.FACE_PYTHON_BIN || "python3",
+      workerPath: process.env.FACE_PYTHON_WORKER || "backend/ml/face_worker.py",
+      mongoConfigured: Boolean(out.mongoConfigured),
+      registeredCount: out.registeredCount ?? null,
+    });
   } catch (error) {
     console.error("[mlController.faceServiceHealth] error", {
-      url: FACE_ML_SERVICE_URL,
       message: error.message,
       code: error.code,
       status: error.response?.status,
