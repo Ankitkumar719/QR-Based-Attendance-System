@@ -1,4 +1,7 @@
-const API_BASE_URL = "https://api.attendsmart.in";
+const API_BASE_URL =
+  window.location.hostname.includes("vercel")
+    ? "https://render-backend-url.onrender.com"
+    : "https://api.attendsmart.in";
 
 export const getToken = () => localStorage.getItem("token");
 export const getUser = () => {
