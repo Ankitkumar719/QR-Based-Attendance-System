@@ -21,15 +21,25 @@ export const runFaceWorker = async (
   payload,
   {
     timeoutMs = env.FACE_ML_TIMEOUT_MS || 30_000,
-    pythonBin = process.env.FACE_PYTHON_BIN || "python3",
+    pythonBin = process.env.FACE_PYTHON_BIN,
     workerPath = process.env.FACE_PYTHON_WORKER || DEFAULT_WORKER_PATH,
     extraEnv = {},
   } = {}
 ) => {
   const input = JSON.stringify(payload);
 
-  return await new Promise((resolve, reject) => {
-    const child = spawn(pythonBin, [workerPath], {
+  const candidates = [
+    pythonBin,
+    // sensible defaults
+    process.platform === "win32" ? "python" : "python3",
+    "python3",
+    "python",
+    process.platform === "win32" ? "py" : null,
+  ].filter(Boolean);
+
+  const tryOnce = (bin) =>
+    new Promise((resolve, reject) => {
+      const child = spawn(bin, [workerPath], {
       stdio: ["pipe", "pipe", "pipe"],
       env: {
         ...process.env,
@@ -77,8 +87,19 @@ export const runFaceWorker = async (
       }
 
       if (!data) {
+        const pythonMissing =
+          /Python was not found/i.test(stderr) ||
+          /No such file or directory/i.test(stderr) ||
+          /not recognized as an internal or external command/i.test(stderr);
+        const depsMissing =
+          /ModuleNotFoundError:/i.test(stderr) ||
+          /No module named/i.test(stderr);
         const err = new Error("Face worker returned empty output");
-        err.code = "FACE_WORKER_EMPTY_OUTPUT";
+        err.code = pythonMissing
+          ? "FACE_PYTHON_NOT_FOUND"
+          : depsMissing
+            ? "FACE_PYTHON_DEPS_MISSING"
+            : "FACE_WORKER_EMPTY_OUTPUT";
         err.stderr = stderr;
         err.exitCode = code;
         return reject(err);
@@ -101,6 +122,20 @@ export const runFaceWorker = async (
     child.stdin.write(input);
     child.stdin.end();
   });
+
+  let lastErr;
+  for (const bin of candidates) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      return await tryOnce(bin);
+    } catch (err) {
+      lastErr = err;
+      // If the binary isn't usable, try next candidate
+      if (err.code === "ENOENT" || err.code === "FACE_PYTHON_NOT_FOUND") continue;
+      throw err;
+    }
+  }
+  throw lastErr;
 };
 
 export const assertNoExternalFaceService = () => {

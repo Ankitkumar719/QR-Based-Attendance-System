@@ -79,7 +79,10 @@ def _load_known_faces_from_mongo():
 
 
 def register_face(image_b64: str):
-    image_np = _decode_base64_jpeg(image_b64)
+    try:
+        image_np = _decode_base64_jpeg(image_b64)
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}, 400
     face_encodings = face_recognition.face_encodings(image_np)
 
     if len(face_encodings) == 0:
@@ -92,7 +95,10 @@ def register_face(image_b64: str):
 
 
 def recognize_face(image_b64: str, tolerance: float = 0.6):
-    image_np = _decode_base64_jpeg(image_b64)
+    try:
+        image_np = _decode_base64_jpeg(image_b64)
+    except ValueError as e:
+        return {"ok": False, "error": str(e)}, 400
     face_encodings = face_recognition.face_encodings(image_np)
 
     if len(face_encodings) == 0:

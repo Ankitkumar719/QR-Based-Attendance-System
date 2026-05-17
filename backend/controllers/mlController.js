@@ -166,7 +166,18 @@ export const registerFace = async (req, res) => {
       disabledAt: undefined,
       disabledReason: undefined,
     };
-    await student.save();
+    try {
+      await student.save();
+    } catch (dbErr) {
+      console.error("[mlController.registerFace] Failed saving face descriptor to MongoDB", {
+        studentId: student._id,
+        error: dbErr.message,
+      });
+      return res.status(500).json({
+        message: "Failed to save face registration",
+        code: "FACE_DB_SAVE_FAILED",
+      });
+    }
 
     await FaceRegistrationLog.create({
       action: isUpdate ? "update" : "register",
@@ -213,11 +224,37 @@ export const registerFace = async (req, res) => {
       });
     }
 
+    if (error.code === "FACE_PYTHON_NOT_FOUND") {
+      console.error("[mlController.registerFace] Python not available for face worker", {
+        stderr: error.stderr,
+        exitCode: error.exitCode,
+      });
+      return res.status(503).json({
+        message:
+          "Face recognition runtime is not available on the server. Ensure Python is installed in the deployment (Docker recommended).",
+        code: "FACE_PYTHON_NOT_AVAILABLE",
+      });
+    }
+
+    if (error.code === "FACE_PYTHON_DEPS_MISSING") {
+      console.error("[mlController.registerFace] Python face-recognition deps missing", {
+        stderr: error.stderr,
+        exitCode: error.exitCode,
+      });
+      return res.status(503).json({
+        message:
+          "Face recognition dependencies are missing on the server. Ensure the deployment installs `face-recognition` (Docker recommended).",
+        code: "FACE_PYTHON_DEPS_MISSING",
+      });
+    }
+
     console.error("[mlController.registerFace] Unexpected error", {
       studentId: req.user._id,
       error: error.message,
       status: error.response?.status,
       response: error.response?.data,
+      stderr: error.stderr,
+      stdout: error.stdout,
     });
 
     try {
@@ -242,7 +279,7 @@ export const registerFace = async (req, res) => {
         error.response?.data?.error ||
         error.response?.data?.message ||
         "Error registering face",
-      code: "FACE_REGISTRATION_FAILED",
+      code: error.code || "FACE_REGISTRATION_FAILED",
     });
   }
 };
