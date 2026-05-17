@@ -17,16 +17,27 @@ window.addEventListener("error", (event) => {
 // Cache for faculty classes to populate report dropdowns
 let facultyClassesCache = [];
 
-const logoutBtn = document.getElementById("logoutBtn");
-logoutBtn.addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "index.html";
+// Ensure logout works even if the API call fails — use the centralized `logout` helper
+logoutBtn?.addEventListener("click", async () => {
+  try {
+    // Attempt server-side logout if available
+    await logout().catch(err => console.error('logout() failed:', err));
+  } catch (err) {
+    console.error('Error during logout:', err);
+  } finally {
+    // Ensure client-side cleanup and redirect always happen
+    try { localStorage.clear(); } catch (e) { console.error('localStorage clear failed', e); }
+    window.location.href = "index.html";
+  }
 });
 
 const timeTable = document.getElementById("timeTable");
 const dashboardCards = document.getElementById("dashboardCards");
 const upcomingClassDetails = document.getElementById("upcomingClassDetails");
 const profileDetails = document.getElementById("profileDetails");
+const sessionControls = document.getElementById("activeSessionPanel");
+const sessionInfo = document.getElementById("activeSessionInfo");
+const studentsTable = document.getElementById("studentsTable");
 let qr;
 let currentQrToken;
 let currentSessionId;
@@ -56,11 +67,11 @@ const timeTableView = document.getElementById("timeTableView");
 const profileView = document.getElementById("profileView");
 const activeSessionPanel = document.getElementById("activeSessionPanel");
 
-dashboardBtn.addEventListener("click", () => switchView("dashboard"));
-viewAttendanceBtn.addEventListener("click", () => switchView("view"));
-analyticsBtn.addEventListener("click", () => switchView("analytics"));
-timeTableBtn.addEventListener("click", () => switchView("timeTable"));
-profileBtn.addEventListener("click", () => switchView("profile"));
+dashboardBtn?.addEventListener("click", () => switchView("dashboard"));
+viewAttendanceBtn?.addEventListener("click", () => switchView("view"));
+analyticsBtn?.addEventListener("click", () => switchView("analytics"));
+timeTableBtn?.addEventListener("click", () => switchView("timeTable"));
+profileBtn?.addEventListener("click", () => switchView("profile"));
 
 function switchView(view) {
   dashboardView.style.display = "none";
@@ -100,9 +111,9 @@ function switchView(view) {
 }
 
 // Add event listeners for report branch and semester changes
-document.getElementById("reportBranch").addEventListener("change", populateSemesterDropdown);
-document.getElementById("reportSemester").addEventListener("change", populateSectionDropdown);
-document.getElementById("reportSection").addEventListener("change", populateSubjectDropdown);
+document.getElementById("reportBranch")?.addEventListener("change", populateSemesterDropdown);
+document.getElementById("reportSemester")?.addEventListener("change", populateSectionDropdown);
+document.getElementById("reportSection")?.addEventListener("change", populateSubjectDropdown);
 
 // Populate subjects for report form based on branch and semester
 async function fetchFacultyClasses() {
@@ -343,7 +354,9 @@ async function loadStudents(classId) {
       </tfoot>
     `;
 
-    studentsTable.innerHTML = `${header}<tbody>${rows}</tbody>${footer}`;
+    if (studentsTable) {
+      studentsTable.innerHTML = `${header}<tbody>${rows}</tbody>${footer}`;
+    }
 
     document.querySelectorAll(".attendance-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -372,7 +385,7 @@ async function loadStudents(classId) {
       });
     });
 
-    document.getElementById("saveAttendanceBtn").addEventListener("click", async () => {
+    document.getElementById("saveAttendanceBtn")?.addEventListener("click", async () => {
       if (!currentSessionId) {
         alert("No active session. Please start a session first.");
         return;
@@ -398,7 +411,9 @@ async function loadStudents(classId) {
 
   } catch (error) {
     console.error("Error loading students", error);
-    studentsTable.innerHTML = "<tr><td colspan='4'>Could not load students.</td></tr>";
+    if (studentsTable) {
+      studentsTable.innerHTML = "<tr><td colspan='4'>Could not load students.</td></tr>";
+    }
   }
 }
 
@@ -1032,7 +1047,7 @@ const reportForm = document.getElementById("reportForm");
 const attendanceReportTable = document.getElementById("attendanceReportTable");
 const exportCsvBtn = document.getElementById("exportCsvBtn");
 
-reportForm.addEventListener("submit", async (e) => {
+reportForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const branch = document.getElementById("reportBranch").value;
@@ -1049,7 +1064,7 @@ reportForm.addEventListener("submit", async (e) => {
   await loadAttendanceReport(branch, semester, section, subjectCode, date);
 });
 
-exportCsvBtn.addEventListener("click", () => {
+exportCsvBtn?.addEventListener("click", () => {
   exportToCSV();
 });
 
@@ -1244,11 +1259,11 @@ async function loadFacultyAnalytics() {
     
     // Set up form submission
     const analyticsForm = document.getElementById("analyticsForm");
-    analyticsForm.addEventListener("submit", handleAnalyticsSubmit);
+    analyticsForm?.addEventListener("submit", handleAnalyticsSubmit);
     
     // Set up export button
     const exportBtn = document.getElementById("exportCsvBtn");
-    exportBtn.addEventListener("click", exportAnalyticsCsv);
+    exportBtn?.addEventListener("click", exportAnalyticsCsv);
     
   } catch (error) {
     console.error("Error loading faculty analytics:", error);
@@ -1466,8 +1481,21 @@ function updateLiveCounters() {
 manualMarkBtn?.addEventListener("click", markStudentManually);
 
 
-// Initial load
-switchView("dashboard");
-loadTimeTableFromDB();
-loadDashboardFromDB();
-loadProfile();
+// Initial load (guarded to avoid runtime errors if some DOM sections are not present)
+try {
+  if (document.getElementById('dashboardView')) switchView("dashboard");
+} catch (err) {
+  console.error('Error during initial view switch', err);
+}
+
+if (document.getElementById('timeTable')) {
+  loadTimeTableFromDB();
+}
+
+if (document.getElementById('dashboardCards')) {
+  loadDashboardFromDB();
+}
+
+if (document.getElementById('profileDetails')) {
+  loadProfile();
+}
