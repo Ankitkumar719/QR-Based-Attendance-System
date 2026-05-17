@@ -27,7 +27,10 @@ const activeSessionsList = document.getElementById("activeSessionsList");
 const activeSessionBanner = document.getElementById("activeSessionBanner");
 const activeSessionBannerText = document.getElementById("activeSessionBannerText");
 
-document.getElementById('studentDate').valueAsDate = new Date();
+const studentDateInput = document.getElementById("studentDate");
+if (studentDateInput) {
+  studentDateInput.valueAsDate = new Date();
+}
 
 // Update welcome banner with user info
 function updateWelcomeBanner() {
@@ -70,60 +73,84 @@ const analyticsView = document.getElementById("analyticsView");
 const timeTableView = document.getElementById("timeTableView");
 const profileView = document.getElementById("profileView");
 
-dashboardBtn.addEventListener("click", () => switchView("dashboard"));
-markAttendanceBtn.addEventListener("click", () => switchView("mark"));
-viewAttendanceBtn.addEventListener("click", () => switchView("view"));
-analyticsBtn.addEventListener("click", () => switchView("analytics"));
-timeTableBtn.addEventListener("click", () => switchView("timeTable"));
-profileBtn.addEventListener("click", () => switchView("profile"));
+dashboardBtn?.addEventListener("click", () => switchView("dashboard"));
+markAttendanceBtn?.addEventListener("click", () => switchView("mark"));
+viewAttendanceBtn?.addEventListener("click", () => switchView("view"));
+analyticsBtn?.addEventListener("click", () => switchView("analytics"));
+timeTableBtn?.addEventListener("click", () => switchView("timeTable"));
+profileBtn?.addEventListener("click", () => switchView("profile"));
 
 // Make switchView accessible globally for button onclick
 window.switchView = switchView;
 
+function showToast(message, type = "info") {
+  console.error(`[${type}] ${message}`);
+  const banner = document.getElementById("activeSessionBanner");
+  const bannerText = document.getElementById("activeSessionBannerText");
+  if (!banner || !bannerText) return;
+  const colors = { error: "#dc3545", warning: "#ffc107", info: "#17a2b8" };
+  banner.style.display = "block";
+  banner.style.background = colors[type] || colors.info;
+  bannerText.textContent = message;
+  setTimeout(() => {
+    if (bannerText.textContent === message) {
+      checkActiveSessionsForBanner().catch(() => {
+        banner.style.display = "none";
+      });
+    }
+  }, 4000);
+}
+
 function switchView(view) {
+  if (!dashboardView || !markAttendanceView || !viewAttendanceView || !analyticsView || !timeTableView || !profileView) {
+    console.error("switchView: missing view container elements");
+    return;
+  }
   dashboardView.style.display = "none";
   markAttendanceView.style.display = "none";
   viewAttendanceView.style.display = "none";
   analyticsView.style.display = "none";
   timeTableView.style.display = "none";
   profileView.style.display = "none";
-  dashboardBtn.classList.remove("active");
-  markAttendanceBtn.classList.remove("active");
-  viewAttendanceBtn.classList.remove("active");
-  analyticsBtn.classList.remove("active");
-  timeTableBtn.classList.remove("active");
-  profileBtn.classList.remove("active");
+  dashboardBtn?.classList.remove("active");
+  markAttendanceBtn?.classList.remove("active");
+  viewAttendanceBtn?.classList.remove("active");
+  analyticsBtn?.classList.remove("active");
+  timeTableBtn?.classList.remove("active");
+  profileBtn?.classList.remove("active");
 
   if (view === "dashboard") {
     dashboardView.style.display = "block";
-    dashboardBtn.classList.add("active");
+    dashboardBtn?.classList.add("active");
   } else if (view === "mark") {
     markAttendanceView.style.display = "block";
-    markAttendanceBtn.classList.add("active");
-    loadActiveSessions(); // Load active sessions when view is opened
+    markAttendanceBtn?.classList.add("active");
+    loadActiveSessions().catch((err) => console.error("loadActiveSessions failed", err));
   } else if (view === "view") {
     viewAttendanceView.style.display = "block";
-    viewAttendanceBtn.classList.add("active");
+    viewAttendanceBtn?.classList.add("active");
   } else if (view === "analytics") {
     analyticsView.style.display = "block";
-    analyticsBtn.classList.add("active");
-    loadStudentAnalytics();
+    analyticsBtn?.classList.add("active");
+    loadStudentAnalytics().catch((err) => console.error("loadStudentAnalytics failed", err));
   } else if (view === "timeTable") {
     timeTableView.style.display = "block";
-    timeTableBtn.classList.add("active");
+    timeTableBtn?.classList.add("active");
   } else if (view === "profile") {
     profileView.style.display = "block";
-    profileBtn.classList.add("active");
+    profileBtn?.classList.add("active");
   }
 }
 
 // Load today's attendance verification
 async function loadTodayAttendance() {
   const todayAttendanceList = document.getElementById("todayAttendanceList");
-  
+  if (!todayAttendanceList) return;
+
   try {
     const data = await apiGet("/api/student/today-attendance");
-    
+    if (!data) return;
+
     if (!data.records || data.records.length === 0) {
       todayAttendanceList.innerHTML = `
         <div style="text-align: center; padding: 30px; color: #888;">
@@ -212,23 +239,28 @@ async function loadTodayAttendance() {
 window.loadTodayAttendance = loadTodayAttendance;
 
 async function loadDashboard() {
+  if (!dashboardSummaryCards || !subjectCards) return;
   try {
     const data = await apiGet("/api/student/dashboard");
+    if (!data) return;
+    const totalClasses = data.totalClasses ?? data.subjects?.length ?? 0;
+    const remainingClasses = data.remainingClasses ?? Math.max(0, totalClasses - (data.attendedClasses ?? 0));
     const summaryCardsHTML = `
-        <div class="card"><h3>Overall Attendance</h3><p style="font-size: 2rem; font-weight: bold;">${data.overallPercentage}%</p></div>
-        <div class="card"><h3>Total Classes</h3><p style="font-size: 2rem; font-weight: bold;">${data.totalClasses}</p></div>
-        <div class="card"><h3>Remaining Classes</h3><p style="font-size: 2rem; font-weight: bold;">${data.remainingClasses}</p></div>
+        <div class="card"><h3>Overall Attendance</h3><p style="font-size: 2rem; font-weight: bold;">${data.overallPercentage ?? 0}%</p></div>
+        <div class="card"><h3>Total Classes</h3><p style="font-size: 2rem; font-weight: bold;">${totalClasses}</p></div>
+        <div class="card"><h3>Remaining Classes</h3><p style="font-size: 2rem; font-weight: bold;">${remainingClasses}</p></div>
     `;
     dashboardSummaryCards.innerHTML = summaryCardsHTML;
 
-    const subjectCardsHTML = data.subjects.map(subject => `
+    const subjects = Array.isArray(data.subjects) ? data.subjects : [];
+    const subjectCardsHTML = subjects.map(subject => `
         <div class="card">
-            <h3>${subject.class.courseCode}</h3>
-            <p>${subject.class.courseName}</p>
-            <p style="font-size: 2rem; font-weight: bold;">${subject.percentage}%</p>
+            <h3>${subject.class?.courseCode ?? "N/A"}</h3>
+            <p>${subject.class?.courseName ?? ""}</p>
+            <p style="font-size: 2rem; font-weight: bold;">${subject.percentage ?? 0}%</p>
         </div>
     `).join('');
-    subjectCards.innerHTML = subjectCardsHTML;
+    subjectCards.innerHTML = subjectCardsHTML || "<p>No subject attendance data yet.</p>";
   } catch (error) {
     console.error("Dashboard load error", error);
     dashboardSummaryCards.innerHTML = "<p>Could not load dashboard stats.</p>";
@@ -238,10 +270,12 @@ async function loadDashboard() {
 
 // Load active attendance sessions for the student
 async function loadActiveSessions() {
+  if (!activeSessionsList) return;
   try {
     const sessions = await apiGet("/api/student/active-sessions");
-    
-    if (!sessions || sessions.length === 0) {
+    if (!sessions) return;
+
+    if (!Array.isArray(sessions) || sessions.length === 0) {
       activeSessionsList.innerHTML = `
         <p style="color: #888; text-align: center;">
           <span style="font-size: 2rem;">📭</span><br>
@@ -375,11 +409,15 @@ window.markSessionAttendance = async function(qrToken, button) {
 
 // Check for active sessions and show banner on dashboard
 async function checkActiveSessionsForBanner() {
+  if (!activeSessionBanner || !activeSessionBannerText) return;
   try {
     const sessions = await apiGet("/api/student/active-sessions");
-    
-    // Filter sessions that haven't been marked yet
-    const unmarkedSessions = sessions.filter(s => !s.alreadyMarked);
+    if (!sessions || !Array.isArray(sessions)) {
+      activeSessionBanner.style.display = "none";
+      return;
+    }
+
+    const unmarkedSessions = sessions.filter((s) => !s.alreadyMarked);
     
     if (unmarkedSessions.length > 0) {
       activeSessionBanner.style.display = 'block';
@@ -397,14 +435,15 @@ async function checkActiveSessionsForBanner() {
   }
 }
 
-markBtn.addEventListener("click", () => {
-  const token = qrTokenInput.value.trim();
-  console.debug('student.markBtn clicked', { qrTokenInput: token, storedToken: localStorage.getItem('token'), storedUser: localStorage.getItem('user') });
+markBtn?.addEventListener("click", () => {
+  const token = qrTokenInput?.value?.trim() ?? "";
+  console.debug("student.markBtn clicked", { qrTokenInput: token });
   handleMarkAttendance(token);
 });
 
 async function handleMarkAttendance(token) {
   if (!token) return;
+  if (!markMsg) return;
 
   markMsg.textContent = "Verifying token...";
   markMsg.style.color = "orange";
@@ -428,8 +467,11 @@ async function handleMarkAttendance(token) {
 // QR scanner using html5-qrcode
 if (window.Html5Qrcode) {
   const qrRegionId = "qrReader";
+  const qrFormats = window.Html5QrcodeSupportedFormats?.QR_CODE != null
+    ? [window.Html5QrcodeSupportedFormats.QR_CODE]
+    : undefined;
   const qrScanner = new Html5Qrcode(qrRegionId, {
-    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+    formatsToSupport: qrFormats,
     experimentalFeatures: {
       useBarCodeDetectorIfSupported: true
     },
@@ -553,10 +595,12 @@ if (window.Html5Qrcode) {
 }
 
 async function loadTimeTable() {
+  if (!timeTable) return;
   try {
     const timeTableData = await apiGet("/api/student/timetable");
-    
-    if (!timeTableData || timeTableData.length === 0) {
+    if (!timeTableData) return;
+
+    if (!Array.isArray(timeTableData) || timeTableData.length === 0) {
       timeTable.innerHTML = `
         <thead>
           <tr><th colspan="7" style="text-align: center; color: #888;">No timetable available for your class</th></tr>
@@ -671,7 +715,9 @@ const facialAttendanceBtn = document.getElementById("facialAttendanceBtn");
 const facialReader = document.getElementById("facialReader");
 const facialMsg = document.getElementById("facialMsg");
 
-facialAttendanceBtn.addEventListener("click", startFacialAttendance);
+facialAttendanceBtn?.addEventListener("click", () => {
+  startFacialAttendance().catch((err) => console.error("startFacialAttendance failed", err));
+});
 
 async function startFacialAttendance() {
     facialMsg.textContent = "";
@@ -704,7 +750,7 @@ async function startFacialAttendance() {
             const session = sessions[0]; // Use first active session
             
             // Send to ML service
-            await apiPost("/api/ml/recognize-face", { image: imageData, sessionId: session._id });
+            await apiPost("/api/ml/recognize-face", { image: imageData, sessionId: session.sessionId || session._id });
             facialMsg.textContent = "Attendance marked successfully!";
             facialMsg.style.color = "green";
             
@@ -776,17 +822,59 @@ function showTodaySchedule(timeTableData, dayOfWeek, currentTime) {
     }).join('');
 }
 
+async function registerFace() {
+  const registerMsg = document.getElementById("registerMsg");
+  if (!registerMsg) return;
+  registerMsg.textContent = "Accessing camera...";
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    await video.play();
+
+    setTimeout(async () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(video, 0, 0);
+        const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
+
+        stream.getTracks().forEach((track) => track.stop());
+
+        const profile = await apiGet("/api/student/profile");
+        if (!profile) return;
+        await apiPost("/api/ml/register-face", { studentId: profile.studentId, image: imageData });
+        registerMsg.textContent = "Face registered successfully!";
+        registerMsg.style.color = "green";
+      } catch (error) {
+        console.error("Face registration capture error", error);
+        registerMsg.textContent = "Error registering face.";
+        registerMsg.style.color = "red";
+      }
+    }, 3000);
+  } catch (error) {
+    console.error("Face registration error", error);
+    registerMsg.textContent = "Error accessing camera.";
+    registerMsg.style.color = "red";
+  }
+}
+
 async function loadProfile() {
+  if (!profileDetails) return;
   try {
     const profile = await apiGet("/api/student/profile");
+    if (!profile) return;
     profileDetails.innerHTML = `
         <div class="upcoming-class-grid">
-            <p><strong>Name:</strong></p><p>${profile.name}</p>
-            <p><strong>Email:</strong></p><p>${profile.email}</p>
-            <p><strong>Student ID:</strong></p><p>${profile.studentId}</p>
-            <p><strong>Branch:</strong></p><p>${profile.branch}</p>
-            <p><strong>Semester:</strong></p><p>${profile.semester}</p>
-            <p><strong>Section:</strong></p><p>${profile.section}</p>
+            <p><strong>Name:</strong></p><p>${profile.name ?? ""}</p>
+            <p><strong>Email:</strong></p><p>${profile.email ?? ""}</p>
+            <p><strong>Student ID:</strong></p><p>${profile.studentId ?? ""}</p>
+            <p><strong>Branch:</strong></p><p>${profile.branch ?? ""}</p>
+            <p><strong>Semester:</strong></p><p>${profile.semester ?? ""}</p>
+            <p><strong>Section:</strong></p><p>${profile.section ?? ""}</p>
         </div>
         <div style="margin-top: 20px;">
             <h4 style="color: #fff;">Face Registration for ML Attendance</h4>
@@ -794,43 +882,10 @@ async function loadProfile() {
             <p id="registerMsg" style="margin-top: 10px;"></p>
         </div>
     `;
-    
-    // Add event listener for register face
-    document.getElementById("registerFaceBtn").addEventListener("click", registerFace);
-}
 
-async function registerFace() {
-    const registerMsg = document.getElementById("registerMsg");
-    registerMsg.textContent = "Accessing camera...";
-    
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
-        
-        // Capture after 3 seconds
-        setTimeout(async () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0);
-            const imageData = canvas.toDataURL('image/jpeg').split(',')[1];
-            
-            stream.getTracks().forEach(track => track.stop());
-            
-            const profile = await apiGet("/api/student/profile");
-            await apiPost("/api/ml/register-face", { studentId: profile.studentId, image: imageData });
-            registerMsg.textContent = "Face registered successfully!";
-            registerMsg.style.color = "green";
-        }, 3000);
-        
-    } catch (error) {
-        console.error("Face registration error", error);
-        registerMsg.textContent = "Error registering face.";
-        registerMsg.style.color = "red";
-    }
+    document.getElementById("registerFaceBtn")?.addEventListener("click", () => {
+      registerFace().catch((err) => console.error("registerFace failed", err));
+    });
   } catch (error) {
     console.error("Profile load error", error);
     profileDetails.innerHTML = "<p>Could not load profile.</p>";
@@ -841,13 +896,16 @@ async function registerFace() {
 const viewAttendanceForm = document.getElementById("viewAttendanceForm");
 const attendanceStatusTable = document.getElementById("attendanceStatusTable");
 
-viewAttendanceForm.addEventListener("submit", async (e) => {
+viewAttendanceForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!attendanceStatusTable) return;
     attendanceStatusTable.style.display = "table";
-    const date = document.getElementById("studentDate").value;
-    
+    const date = document.getElementById("studentDate")?.value;
+    if (!date) return;
+
     try {
         const attendance = await apiGet(`/api/student/attendance?date=${date}`);
+        if (!attendance) return;
         const header = `
             <thead>
                 <tr>
@@ -857,7 +915,7 @@ viewAttendanceForm.addEventListener("submit", async (e) => {
             </thead>
         `;
 
-        const rows = attendance.map(a => `
+        const rows = (Array.isArray(attendance) ? attendance : []).map(a => `
             <tr>
                 <td>${a.subject}</td>
                 <td style="color: ${a.status === 'Present' ? 'green' : 'red'};">${a.status}</td>
@@ -873,19 +931,24 @@ viewAttendanceForm.addEventListener("submit", async (e) => {
 
 // Initial load
 async function init() {
+  try {
     switchView("dashboard");
     updateWelcomeBanner();
-    await loadDashboard();
-    await loadTodayAttendance(); // Load today's attendance verification
-    await loadTimeTable();
-    await loadProfile();
-    await checkActiveSessionsForBanner();
-    
-    // Periodically check for new active sessions (every 30 seconds)
-    setInterval(async () => {
-      await checkActiveSessionsForBanner();
-      await loadTodayAttendance(); // Also refresh today's attendance
+    await Promise.allSettled([
+      loadDashboard(),
+      loadTodayAttendance(),
+      loadTimeTable(),
+      loadProfile(),
+      checkActiveSessionsForBanner()
+    ]);
+
+    setInterval(() => {
+      checkActiveSessionsForBanner().catch((err) => console.error("Banner poll failed", err));
+      loadTodayAttendance().catch((err) => console.error("Today attendance poll failed", err));
     }, 30000);
+  } catch (error) {
+    console.error("Student dashboard init failed", error);
+  }
 }
 
 
@@ -893,17 +956,18 @@ async function init() {
 async function loadStudentAnalytics() {
   try {
     const data = await apiGet("/api/analytics/student");
-    
-    // Update summary cards
-    document.getElementById("totalSessions").textContent = data.totalSessions || 0;
-    document.getElementById("presentCount").textContent = data.presentCount || 0;
-    document.getElementById("absentCount").textContent = data.absentCount || 0;
-    document.getElementById("attendancePercentage").textContent = `${data.attendancePercentage || 0}%`;
-    
-    // Load chart
+    if (!data) return;
+
+    const overallEl = document.getElementById("overallAttendance");
+    const presentEl = document.getElementById("totalPresent");
+    const absentEl = document.getElementById("totalAbsent");
+    const sessionsEl = document.getElementById("totalSessions");
+    if (overallEl) overallEl.textContent = `${data.attendancePercentage ?? 0}%`;
+    if (presentEl) presentEl.textContent = data.presentCount ?? 0;
+    if (absentEl) absentEl.textContent = data.absentCount ?? 0;
+    if (sessionsEl) sessionsEl.textContent = data.totalSessions ?? 0;
+
     loadStudentChart(data.monthlyData || []);
-    
-    // Load table
     displayStudentAnalyticsTable(data.records || []);
   } catch (error) {
     console.error("Error loading student analytics:", error);
@@ -911,17 +975,22 @@ async function loadStudentAnalytics() {
   }
 }
 
-async function loadStudentChart(monthlyData) {
-  const ctx = document.getElementById("studentAttendanceChart").getContext("2d");
-  
-  const labels = monthlyData.map(item => item.month);
-  const presentData = monthlyData.map(item => item.present);
-  const absentData = monthlyData.map(item => item.absent);
-  
+function loadStudentChart(monthlyData) {
+  const canvas = document.getElementById("studentChart");
+  if (!canvas || typeof Chart === "undefined") {
+    console.error("Chart.js not loaded or canvas missing");
+    return;
+  }
+  const ctx = canvas.getContext("2d");
+
+  const labels = monthlyData.map((item) => item.month);
+  const presentData = monthlyData.map((item) => item.present);
+  const absentData = monthlyData.map((item) => item.absent);
+
   if (window.studentChart) {
     window.studentChart.destroy();
   }
-  
+
   window.studentChart = new Chart(ctx, {
     type: "line",
     data: {
@@ -978,17 +1047,18 @@ async function loadStudentChart(monthlyData) {
 
 async function handleStudentAnalyticsSubmit(event) {
   event.preventDefault();
-  
-  const startDate = document.getElementById("analyticsStartDate").value;
-  const endDate = document.getElementById("analyticsEndDate").value;
-  
+
+  const startDate = document.getElementById("anFromDate")?.value;
+  const endDate = document.getElementById("anToDate")?.value;
+
   if (!startDate || !endDate) {
     showToast("Please select both start and end dates", "warning");
     return;
   }
-  
+
   try {
     const data = await apiGet(`/api/analytics/student?startDate=${startDate}&endDate=${endDate}`);
+    if (!data) return;
     displayStudentAnalyticsTable(data.records || []);
   } catch (error) {
     console.error("Error filtering analytics:", error);
@@ -997,34 +1067,62 @@ async function handleStudentAnalyticsSubmit(event) {
 }
 
 function displayStudentAnalyticsTable(records) {
-  const tableBody = document.getElementById("studentAnalyticsTableBody");
-  
+  const table = document.getElementById("analyticsTable");
+  if (!table) return;
+
   if (!records || records.length === 0) {
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 30px; color: #888;">
-          <span style="font-size: 2.5rem;">📊</span>
-          <p style="margin-top: 10px;">No attendance records found for the selected period.</p>
-        </td>
-      </tr>
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Session Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 30px; color: #888;">
+            No attendance records found for the selected period.
+          </td>
+        </tr>
+      </tbody>
     `;
     return;
   }
-  
-  tableBody.innerHTML = records.map(record => `
+
+  const rows = records.map((record) => `
     <tr>
-      <td>${new Date(record.date).toLocaleDateString()}</td>
-      <td>${record.subject || 'N/A'}</td>
-      <td>${record.faculty || 'N/A'}</td>
-      <td>
-        <span class="status-badge ${record.status === 'present' ? 'present' : 'absent'}">
-          ${record.status === 'present' ? '✓ Present' : '✗ Absent'}
-        </span>
+      <td>${record.date ? new Date(record.date).toLocaleDateString() : "N/A"}</td>
+      <td>${record.subject || "N/A"}</td>
+      <td style="color: ${record.status === "present" ? "#28a745" : "#dc3545"};">
+        ${record.status === "present" ? "Present" : "Absent"}
       </td>
-      <td>${record.sessionTime || 'N/A'}</td>
-      <td>${record.location || 'N/A'}</td>
+      <td>${record.sessionTime || "N/A"}</td>
     </tr>
   `).join("");
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Subject</th>
+        <th>Status</th>
+        <th>Session Time</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  `;
 }
 
-init();
+document.getElementById("analyticsForm")?.addEventListener("submit", (e) => {
+  handleStudentAnalyticsSubmit(e).catch((err) => console.error("analytics form submit failed", err));
+});
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    init().catch((err) => console.error("init failed", err));
+  });
+} else {
+  init().catch((err) => console.error("init failed", err));
+}

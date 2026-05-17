@@ -26,11 +26,21 @@ export const studentDashboard = async (req, res, next) => {
       })
       .lean();
 
+    const enrolledClasses = await Class.find({
+      department: req.user.department,
+      semester: req.user.semester,
+      section: req.user.section
+    }).lean();
+    const totalClasses = enrolledClasses.length;
+
     if (!records.length) {
       return res.json({
         overallPercentage: 0,
         subjects: [],
-        lowestSubject: null
+        lowestSubject: null,
+        totalClasses,
+        attendedClasses: 0,
+        remainingClasses: totalClasses
       });
     }
 
@@ -91,8 +101,23 @@ export const studentDashboard = async (req, res, next) => {
       }
     }
 
-    res.json({ overallPercentage, subjects, lowestSubject });
+    const attendedClassIds = new Set(
+      subjects
+        .filter((s) => s.present > 0)
+        .map((s) => (s.class?.id != null ? String(s.class.id) : ""))
+        .filter(Boolean)
+    );
+
+    res.json({
+      overallPercentage,
+      subjects,
+      lowestSubject,
+      totalClasses,
+      attendedClasses: attendedClassIds.size,
+      remainingClasses: Math.max(0, totalClasses - attendedClassIds.size)
+    });
   } catch (err) {
+    console.error("studentDashboard error:", err.message);
     next(err);
   }
 };
@@ -164,6 +189,7 @@ export const getProfile = async (req, res, next) => {
       section: user.section
     });
   } catch (err) {
+    console.error("getProfile error:", err.message);
     next(err);
   }
 };
@@ -225,6 +251,7 @@ export const getTimetable = async (req, res, next) => {
     
     res.json(result);
   } catch (err) {
+    console.error("getTimetable error:", err.message);
     next(err);
   }
 };
@@ -267,6 +294,7 @@ export const getActiveSessions = async (req, res, next) => {
 
     res.json(result);
   } catch (err) {
+    console.error("getActiveSessions error:", err.message);
     next(err);
   }
 };
@@ -311,6 +339,7 @@ export const getAttendance = async (req, res, next) => {
 
     res.json(results);
   } catch (err) {
+    console.error("getAttendance error:", err.message);
     next(err);
   }
 };
@@ -365,6 +394,7 @@ export const getTodayAttendance = async (req, res, next) => {
       records: results
     });
   } catch (err) {
+    console.error("getTodayAttendance error:", err.message);
     next(err);
   }
 };

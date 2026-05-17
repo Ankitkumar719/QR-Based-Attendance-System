@@ -4,6 +4,91 @@ import { Class } from "../models/Class.js";
 import { AttendanceSession } from "../models/AttendanceSession.js";
 import { AttendanceRecord } from "../models/AttendanceRecord.js";
 
+// GET /analytics/student — personal attendance analytics for logged-in student
+export const studentAnalytics = async (req, res, next) => {
+  try {
+    const studentId = req.user._id;
+    const { startDate, endDate } = req.query;
+
+    const recordFilter = { studentId };
+    const records = await AttendanceRecord.find(recordFilter)
+      .populate({
+        path: "sessionId",
+        populate: { path: "classId" }
+      })
+      .lean();
+
+    const inRange = (dateValue) => {
+      if (!startDate && !endDate) return true;
+      const d = new Date(dateValue);
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (d < start) return false;
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (d > end) return false;
+      }
+      return true;
+    };
+
+    const filtered = records.filter((rec) => {
+      const session = rec.sessionId;
+      if (!session) return false;
+      return inRange(session.createdAt || rec.createdAt);
+    });
+
+    const presentCount = filtered.filter((r) => r.status === "present").length;
+    const absentCount = filtered.filter((r) => r.status !== "present").length;
+    const totalSessions = filtered.length;
+    const attendancePercentage = totalSessions
+      ? Math.round((presentCount / totalSessions) * 100)
+      : 0;
+
+    const monthlyMap = new Map();
+    for (const rec of filtered) {
+      const session = rec.sessionId;
+      const when = new Date(session?.createdAt || rec.createdAt);
+      const monthKey = `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}`;
+      if (!monthlyMap.has(monthKey)) {
+        monthlyMap.set(monthKey, { month: monthKey, present: 0, absent: 0 });
+      }
+      const bucket = monthlyMap.get(monthKey);
+      if (rec.status === "present") bucket.present += 1;
+      else bucket.absent += 1;
+    }
+
+    const detailRecords = filtered.map((rec) => {
+      const session = rec.sessionId;
+      const cls = session?.classId;
+      return {
+        date: session?.createdAt || rec.createdAt,
+        subject: cls?.courseName || cls?.courseCode || "N/A",
+        faculty: "N/A",
+        status: rec.status,
+        sessionTime: session?.createdAt
+          ? new Date(session.createdAt).toLocaleTimeString()
+          : "N/A",
+        location: cls?.room || "N/A"
+      };
+    });
+
+    res.json({
+      totalSessions,
+      presentCount,
+      absentCount,
+      attendancePercentage,
+      monthlyData: Array.from(monthlyMap.values()).sort((a, b) => a.month.localeCompare(b.month)),
+      records: detailRecords.sort((a, b) => new Date(b.date) - new Date(a.date))
+    });
+  } catch (err) {
+    console.error("studentAnalytics error:", err.message);
+    next(err);
+  }
+};
+
 // GET /analytics/report
 export const report = async (req, res, next) => {
   try {
