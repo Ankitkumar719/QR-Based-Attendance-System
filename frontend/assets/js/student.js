@@ -1,11 +1,17 @@
-import { apiGet, apiPost, ensureAuth } from "./api.js";
+import { apiGet, apiPost, ensureAuth, logout } from "./api.js";
 
 const user = ensureAuth(["student"]);
 
 const logoutBtn = document.getElementById("logoutBtn");
-logoutBtn.addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "index.html";
+logoutBtn?.addEventListener("click", logout);
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection in student.js:", event.reason);
+  event.preventDefault();
+});
+
+window.addEventListener("error", (event) => {
+  console.error("Unhandled error in student.js:", event.error || event.message || event);
 });
 
 const subjectCards = document.getElementById("subjectCards");
@@ -838,7 +844,7 @@ viewAttendanceForm.addEventListener("submit", async (e) => {
     const date = document.getElementById("studentDate").value;
     
     try {
-        const attendance = await apiGet(`/student/attendance?date=${date}`);
+        const attendance = await apiGet(`/api/student/attendance?date=${date}`);
         const header = `
             <thead>
                 <tr>
@@ -979,7 +985,7 @@ async function handleStudentAnalyticsSubmit(event) {
   }
   
   try {
-    const data = await apiGet(`/analytics/student?startDate=${startDate}&endDate=${endDate}`);
+    const data = await apiGet(`/api/analytics/student?startDate=${startDate}&endDate=${endDate}`);
     displayStudentAnalyticsTable(data.records || []);
   } catch (error) {
     console.error("Error filtering analytics:", error);

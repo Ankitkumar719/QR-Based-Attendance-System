@@ -871,7 +871,7 @@
     
     async function loadStudents() {
       try {
-        const data = await apiGet(`/faculty/session/${sessionId}/students`);
+const data = await apiGet(`/api/faculty/session/${sessionId}/students`);
         allStudents = data.students;
         
         // Update counts
@@ -948,7 +948,7 @@
           
           try {
             btn.disabled = true;
-            const result = await apiPost('/faculty/manual-attendance', {
+            const result = await apiPost('/api/faculty/manual-attendance', {
               sessionId,
               studentId,
               status: newStatus
@@ -1074,7 +1074,7 @@
       if (!confirm('Are you sure you want to end this session?')) return;
       
       try {
-        await apiPost(`/faculty/end-session/${sessionId}`);
+        await apiPost(`/api/faculty/end-session/${sessionId}`);
         localStorage.removeItem('currentSessionId');
         localStorage.removeItem('currentQrToken');
         localStorage.removeItem('currentClassName');

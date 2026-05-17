@@ -1,6 +1,18 @@
-import { apiGet, apiPost, ensureAuth, getUser } from "./api.js";
+import { apiGet, apiPost, ensureAuth, getUser, logout } from "./api.js";
 
 const user = ensureAuth(["faculty"]);
+
+const logoutBtn = document.getElementById("logoutBtn");
+logoutBtn?.addEventListener("click", logout);
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection in faculty.js:", event.reason);
+  event.preventDefault();
+});
+
+window.addEventListener("error", (event) => {
+  console.error("Unhandled error in faculty.js:", event.error || event.message || event);
+});
 
 // Cache for faculty classes to populate report dropdowns
 let facultyClassesCache = [];
@@ -262,7 +274,7 @@ async function loadStudents(classId) {
     // Fetch actual students from API
     let students = [];
     try {
-      students = await apiGet(`/faculty/class/${classId}/students`);
+      students = await apiGet(`/api/faculty/class/${classId}/students`);
     } catch (err) {
       console.error("Error fetching students from API, using mock data", err);
       // Fallback mock data
@@ -1070,7 +1082,7 @@ async function loadAttendanceReport(branch, semester, section, subjectCode, date
       return;
     }
     // Call backend API to get attendance report for the class and date
-    const response = await apiGet(`/faculty/class/${cls._id}/attendance-report?date=${encodeURIComponent(date)}`);
+    const response = await apiGet(`/api/faculty/class/${cls._id}/attendance-report?date=${encodeURIComponent(date)}`);
     console.log("Attendance report response:", response);
     displayAttendanceReport(response, branch, semester, section, subjectCode, date);
   } catch (error) {
@@ -1173,7 +1185,7 @@ async function loadManualAttendanceStudents() {
   if (!currentSessionId || !manualStudentSelect) return;
   
   try {
-    const data = await apiGet(`/faculty/session/${currentSessionId}/students`);
+    const data = await apiGet(`/api/faculty/session/${currentSessionId}/students`);
     
     manualStudentSelect.innerHTML = '<option value="">-- Select Student --</option>';
     

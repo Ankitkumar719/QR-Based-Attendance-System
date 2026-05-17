@@ -1,11 +1,18 @@
-import { apiGet, apiPost, apiPut, apiDelete, ensureAuth, getUser } from "./api.js";
+import { apiGet, apiPost, apiPut, apiDelete, apiDownload, ensureAuth, getUser, logout } from "./api.js";
 
 const user = ensureAuth(["admin"]);
 
 const logoutBtn = document.getElementById("logoutBtn");
-logoutBtn.addEventListener("click", () => {
-  localStorage.clear();
-  window.location.href = "index.html";
+logoutBtn?.addEventListener("click", logout);
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection in admin.js:", event.reason);
+  event.preventDefault();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  console.error("Unhandled promise rejection in admin.js:", event.reason);
+  event.preventDefault();
 });
 
 const statsEl = document.getElementById("adminStats");
@@ -396,7 +403,7 @@ createFacultyForm.addEventListener("submit", async (e) => {
   try {
     if (editId) {
       // Update existing faculty
-      await apiPut(`/admin/users/${editId}`, userData);
+      await apiPut(`/api/admin/users/${editId}`, userData);
       cfMsg.style.color = "green";
       cfMsg.textContent = "Faculty updated successfully!";
     } else {
@@ -476,7 +483,7 @@ async function editStudent(data) {
   csSection.innerHTML = '<option value="">-- Not Assigned --</option>';
   if (data.dept) {
     try {
-      const sections = await apiGet(`/admin/sections?department=${encodeURIComponent(data.dept)}`);
+      const sections = await apiGet(`/api/admin/sections?department=${encodeURIComponent(data.dept)}`);
       sections.forEach(s => {
         csSection.innerHTML += `<option value="${s.name}">${s.name}${s.description ? ' - ' + s.description : ''}</option>`;
       });
@@ -549,7 +556,7 @@ createStudentForm.addEventListener("submit", async (e) => {
   try {
     if (editId) {
       // Update existing student
-      await apiPut(`/admin/users/${editId}`, userData);
+      await apiPut(`/api/admin/users/${editId}`, userData);
       csMsg.style.color = "green";
       csMsg.textContent = "Student updated successfully!";
     } else {
@@ -705,7 +712,7 @@ promoteGroupBtn.addEventListener("click", async () => {
           newSem = toSem;
         }
         
-        await apiPut(`/admin/users/${student._id}`, { semester: newSem });
+        await apiPut(`/api/admin/users/${student._id}`, { semester: newSem });
         successCount++;
       } catch (err) {
         errorCount++;
@@ -821,7 +828,7 @@ promoteSelectedBtn.addEventListener("click", async () => {
     }
     
     try {
-      await apiPut(`/admin/users/${studentId}`, { semester: newSem });
+      await apiPut(`/api/admin/users/${studentId}`, { semester: newSem });
       successCount++;
     } catch (err) {
       errorCount++;
@@ -875,7 +882,7 @@ async function loadDepartmentList() {
 async function deleteDepartment(id, name) {
   if (!confirm(`Are you sure you want to delete department "${name}"? This may affect users and sections.`)) return;
   try {
-    await apiDelete(`/admin/departments/${id}`);
+    await apiDelete(`/api/admin/departments/${id}`);
     loadDepartmentList();
     loadStats();
   } catch (err) {
@@ -1014,7 +1021,7 @@ async function loadSectionList(department = "") {
 async function deleteSection(id, name, dept) {
   if (!confirm(`Are you sure you want to delete section "${name}" from ${dept}?`)) return;
   try {
-    await apiDelete(`/admin/sections/${id}`);
+    await apiDelete(`/api/admin/sections/${id}`);
     loadSectionList(sectionFilterDept.value);
     loadStats();
   } catch (err) {
@@ -1098,7 +1105,7 @@ async function loadCourseList(department = "", semester = "") {
 async function deleteCourse(id, name) {
   if (!confirm(`Are you sure you want to delete course "${name}"?`)) return;
   try {
-    await apiDelete(`/admin/courses/${id}`);
+    await apiDelete(`/api/admin/courses/${id}`);
     loadCourseList(courseFilterDept.value, courseFilterSem.value);
     loadStats();
   } catch (err) {
@@ -1167,7 +1174,7 @@ async function loadStudentSectionDropdown() {
     
     if (dept) {
       try {
-        const sections = await apiGet(`/admin/sections?department=${encodeURIComponent(dept)}`);
+        const sections = await apiGet(`/api/admin/sections?department=${encodeURIComponent(dept)}`);
         sections.forEach(s => {
           csSection.innerHTML += `<option value="${s.name}">${s.name}${s.description ? ' - ' + s.description : ''}</option>`;
         });
@@ -1192,11 +1199,11 @@ analyticsForm.addEventListener("submit", async (e) => {
   if (sec) params.append("section", sec);
   if (name) params.append("courseName", name);
 
-  const report = await apiGet(`/analytics/report?${params.toString()}`);
+  const report = await apiGet(`/api/analytics/report?${params.toString()}`);
   renderAnalytics(report);
 });
 
-exportCsvBtn.addEventListener("click", () => {
+exportCsvBtn.addEventListener("click", async () => {
   const params = new URLSearchParams();
   const dep = document.getElementById("anDepartment").value;
   const sem = document.getElementById("anSemester").value;
@@ -1207,7 +1214,7 @@ exportCsvBtn.addEventListener("click", () => {
   if (sec) params.append("section", sec);
   if (name) params.append("courseName", name);
 
-  window.open(`https://qr-based-attendance-system-zili.onrender.com/analytics/export?${params.toString()}`);
+  await apiDownload(`/api/analytics/export?${params.toString()}`, "attendance_report.csv");
 });
 
 function renderAnalytics(report) {
@@ -1286,7 +1293,7 @@ previewPromotionBtn.addEventListener("click", async () => {
     if (department) params.append("department", department);
     if (section) params.append("section", section);
 
-    const result = await apiGet(`/admin/promote/preview?${params.toString()}`);
+    const result = await apiGet(`/api/admin/promote/preview?${params.toString()}`);
     
     previewCount.textContent = result.count;
     
@@ -1472,7 +1479,7 @@ loadFacultyScheduleBtn.addEventListener("click", async () => {
     }
     
     // Load faculty's schedule
-    const schedule = await apiGet(`/admin/faculty-schedule?facultyId=${facultyId}`);
+    const schedule = await apiGet(`/api/admin/faculty-schedule?facultyId=${facultyId}`);
     currentFacultySchedule = schedule || { facultyId, schedule: {} };
     
     renderFacultySchedule();
@@ -1492,7 +1499,7 @@ slotCourseSelect.addEventListener("change", async () => {
   if (selectedOption.value && selectedOption.dataset.dept) {
     try {
       const deptName = selectedOption.dataset.dept;
-      const sections = await apiGet(`/admin/sections?department=${encodeURIComponent(deptName)}`);
+      const sections = await apiGet(`/api/admin/sections?department=${encodeURIComponent(deptName)}`);
       sections.forEach(s => {
         slotSection.innerHTML += `<option value="${s.name}">${s.name}${s.description ? ' - ' + s.description : ''}</option>`;
       });

@@ -1,7 +1,12 @@
-const API_BASE_URL =
-  window.location.hostname.includes("vercel")
-    ? "https://render-backend-url.onrender.com"
-    : "https://api.attendsmart.in";
+const DEFAULT_API_BASE_URL =
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:5000"
+    : window.location.origin;
+
+export const API_BASE_URL =
+  window.API_BASE_URL ||
+  (window._env_ && window._env_.API_BASE_URL) ||
+  DEFAULT_API_BASE_URL;
 
 export const getToken = () => localStorage.getItem("token");
 export const getUser = () => {
@@ -18,43 +23,103 @@ const buildHeaders = (isJson = true) => {
 };
 
 export const apiGet = async (path) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: buildHeaders(false)
-  });
-  if (!res.ok) throw new Error((await res.json()).message || "Request failed");
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: buildHeaders(false)
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || "Request failed");
+    }
+    return res.json();
+  } catch (err) {
+    console.error(`API GET ${path} failed:`, err);
+    throw err;
+  }
 };
 
 export const apiPost = async (path, body) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    headers: buildHeaders(true),
-    body: JSON.stringify(body)
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "POST",
+      headers: buildHeaders(true),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+    return data;
+  } catch (err) {
+    console.error(`API POST ${path} failed:`, err);
+    throw err;
+  }
 };
 
 export const apiPut = async (path, body) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: "PUT",
-    headers: buildHeaders(true),
-    body: JSON.stringify(body)
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "PUT",
+      headers: buildHeaders(true),
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+    return data;
+  } catch (err) {
+    console.error(`API PUT ${path} failed:`, err);
+    throw err;
+  }
 };
 
 export const apiDelete = async (path) => {
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    method: "DELETE",
-    headers: buildHeaders(false)
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "DELETE",
+      headers: buildHeaders(false)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || "Request failed");
+    }
+    return data;
+  } catch (err) {
+    console.error(`API DELETE ${path} failed:`, err);
+    throw err;
+  }
+};
+
+export const apiDownload = async (path, filename = "download.csv") => {
+  try {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: "GET",
+      headers: buildHeaders(false)
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || "Download request failed");
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(`API DOWNLOAD ${path} failed:`, err);
+    throw err;
+  }
+};
+
+export const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "index.html";
 };
 
 export const ensureAuth = (allowedRoles) => {
