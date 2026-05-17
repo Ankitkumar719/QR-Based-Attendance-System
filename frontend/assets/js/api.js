@@ -29,6 +29,12 @@ export const apiGet = async (path) => {
     });
     if (!res.ok) {
       const payload = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        console.error('API GET unauthorized:', path, payload.message || 'No message');
+        try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch(e){}
+        window.location.href = 'index.html';
+        return;
+      }
       throw new Error(payload.message || "Request failed");
     }
     return res.json();
@@ -47,6 +53,12 @@ export const apiPost = async (path, body) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 401) {
+        console.error('API POST unauthorized:', path, data.message || 'No message');
+        try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch(e){}
+        window.location.href = 'index.html';
+        return;
+      }
       throw new Error(data.message || "Request failed");
     }
     return data;
@@ -65,6 +77,12 @@ export const apiPut = async (path, body) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 401) {
+        console.error('API PUT unauthorized:', path, data.message || 'No message');
+        try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch(e){}
+        window.location.href = 'index.html';
+        return;
+      }
       throw new Error(data.message || "Request failed");
     }
     return data;
@@ -82,6 +100,12 @@ export const apiDelete = async (path) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 401) {
+        console.error('API DELETE unauthorized:', path, data.message || 'No message');
+        try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch(e){}
+        window.location.href = 'index.html';
+        return;
+      }
       throw new Error(data.message || "Request failed");
     }
     return data;
@@ -99,6 +123,12 @@ export const apiDownload = async (path, filename = "download.csv") => {
     });
     if (!res.ok) {
       const payload = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        console.error('API DOWNLOAD unauthorized:', path, payload.message || 'No message');
+        try { localStorage.removeItem('token'); localStorage.removeItem('user'); } catch(e){}
+        window.location.href = 'index.html';
+        return;
+      }
       throw new Error(payload.message || "Download request failed");
     }
     const blob = await res.blob();

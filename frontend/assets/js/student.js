@@ -399,6 +399,7 @@ async function checkActiveSessionsForBanner() {
 
 markBtn.addEventListener("click", () => {
   const token = qrTokenInput.value.trim();
+  console.debug('student.markBtn clicked', { qrTokenInput: token, storedToken: localStorage.getItem('token'), storedUser: localStorage.getItem('user') });
   handleMarkAttendance(token);
 });
 
@@ -409,6 +410,7 @@ async function handleMarkAttendance(token) {
   markMsg.style.color = "orange";
 
   try {
+    console.debug('student.handleMarkAttendance: sending mark request', { qrToken: token, authTokenPresent: !!localStorage.getItem('token') });
     await apiPost("/api/student/mark-attendance", { qrToken: token });
     markMsg.style.color = "green";
     markMsg.textContent = "Attendance marked successfully!";
@@ -417,6 +419,7 @@ async function handleMarkAttendance(token) {
     await loadTodayAttendance(); // Refresh verification section
     await loadActiveSessions(); // Refresh active sessions
   } catch (err) {
+    console.error('student.handleMarkAttendance error', err);
     markMsg.style.color = "red";
     markMsg.textContent = `Error: ${err.message}. Please try again.`;
   }

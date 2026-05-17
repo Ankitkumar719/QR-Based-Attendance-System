@@ -102,7 +102,10 @@ export const markAttendance = async (req, res, next) => {
   try {
     const { qrToken } = req.body;
 
+    console.debug('markAttendance called', { qrToken, userId: req.user?._id, url: req.originalUrl });
+
     if (!qrToken) {
+      console.warn('markAttendance missing qrToken', { userId: req.user?._id });
       return res.status(400).json({ message: "qrToken is required" });
     }
 
@@ -114,6 +117,7 @@ export const markAttendance = async (req, res, next) => {
     });
 
     if (!session) {
+      console.warn('markAttendance: no active session found for token', { qrToken, now: new Date() });
       return res.status(400).json({ message: "Invalid or expired session" });
     }
 
@@ -136,8 +140,10 @@ export const markAttendance = async (req, res, next) => {
       res.status(201).json(record);
     } catch (e) {
       if (e.code === 11000) {
+        console.info('markAttendance: duplicate attendance', { sessionId: session._id, studentId: req.user._id });
         return res.status(409).json({ message: "Attendance already marked" });
       }
+      console.error('markAttendance: unexpected error during create', e && e.message);
       throw e;
     }
   } catch (err) {
