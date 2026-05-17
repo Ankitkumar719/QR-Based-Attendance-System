@@ -2,7 +2,7 @@ const DEFAULT_API_BASE_URL =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
     ? "http://localhost:5000"
-    : "";
+    : "http://34.238.164.184:5000";
 
 export const API_BASE_URL =
   window.API_BASE_URL ||
