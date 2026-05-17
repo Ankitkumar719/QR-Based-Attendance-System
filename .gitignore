@@ -133,3 +133,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Node and environment ignores (frontend/backend)
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+.env
+backend/.env
