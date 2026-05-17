@@ -907,43 +907,181 @@ function showTodaySchedule(timeTableData, dayOfWeek, currentTime) {
 
 async function registerFace() {
   const registerMsg = document.getElementById("registerMsg");
+  const registerBtn = document.getElementById("registerFaceBtn");
   if (!registerMsg) return;
-  registerMsg.textContent = "Accessing camera...";
+
+  // Helper to set message with styling
+  const setMessage = (text, isError = false) => {
+    registerMsg.textContent = text;
+    registerMsg.style.color = isError ? "#ff6b6b" : "#28a745";
+  };
+
+  const setStatus = (text) => {
+    registerMsg.textContent = text;
+    registerMsg.style.color = "#ffc107";
+  };
+
+  // Disable button during registration
+  if (registerBtn) {
+    registerBtn.disabled = true;
+    registerBtn.textContent = "🔄 Processing...";
+  }
 
   try {
+    setStatus("📷 Accessing camera...");
+    console.log("[registerFace] Requesting camera access");
+
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    console.log("[registerFace] Camera stream obtained");
+
     const video = document.createElement("video");
     video.srcObject = stream;
     await video.play();
 
     setTimeout(async () => {
       try {
+        setStatus("📸 Capturing face image...");
+
+        // Validate video dimensions
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+          console.error("[registerFace] Invalid video dimensions", {
+            width: video.videoWidth,
+            height: video.videoHeight,
+          });
+          setMessage("Failed to capture video. Please try again.", true);
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
         const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
+        console.log("[registerFace] Canvas created", {
+          width: canvas.width,
+          height: canvas.height,
+        });
+
         const ctx = canvas.getContext("2d");
         ctx.drawImage(video, 0, 0);
-        const imageData = canvas.toDataURL("image/jpeg").split(",")[1];
 
+        // Convert to JPEG and extract base64
+        const imageData = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+        console.log("[registerFace] Image captured and converted to base64", {
+          imageSize: imageData.length,
+        });
+
+        // Stop camera immediately
         stream.getTracks().forEach((track) => track.stop());
+        console.log("[registerFace] Camera stream stopped");
 
-        const profile = await apiGet("/api/student/profile");
-        if (!profile) return;
+        setStatus("👤 Uploading to face recognition service...");
+
+        // Get profile to get student ID
+        let profile;
+        try {
+          profile = await apiGet("/api/student/profile");
+        } catch (err) {
+          console.error("[registerFace] Failed to get profile", err);
+          setMessage("Failed to load your profile. Please try again.", true);
+          return;
+        }
+
+        if (!profile) {
+          console.error("[registerFace] Profile is empty");
+          setMessage("Profile data is missing.", true);
+          return;
+        }
+
         const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
         const studentIdForMl = storedUser.rollNo || profile.studentId;
-        await apiPost("/api/ml/register-face", { studentId: studentIdForMl, image: imageData });
-        registerMsg.textContent = "Face registered successfully!";
-        registerMsg.style.color = "green";
+        console.log("[registerFace] Sending face registration request", {
+          studentId: studentIdForMl,
+          imageSize: imageData.length,
+        });
+
+        // Send to backend
+        const response = await apiPost("/api/ml/register-face", {
+          studentId: studentIdForMl,
+          image: imageData,
+        });
+
+        console.log("[registerFace] Face registration successful", response);
+        setMessage("✅ Face registered successfully! You can now mark attendance.", false);
+
+        // Re-enable button
+        if (registerBtn) {
+          registerBtn.disabled = false;
+          registerBtn.textContent = "📷 Register Face";
+        }
       } catch (error) {
-        console.error("Face registration capture error", error);
-        registerMsg.textContent = "Error registering face.";
-        registerMsg.style.color = "red";
+        console.error("[registerFace] Capture/upload error", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          fullError: error,
+        });
+
+        // Provide specific error messages based on error type
+        let errorMsg = "Error registering face.";
+
+        if (error.response?.data?.code) {
+          const code = error.response.data.code;
+          const msg = error.response.data.message;
+
+          if (code === "FACE_SERVICE_NOT_RUNNING") {
+            errorMsg =
+              "🔧 Face recognition service is offline. Contact administrator.";
+          } else if (code === "FACE_SERVICE_UNREACHABLE") {
+            errorMsg =
+              "🌐 Cannot reach face service. Check network and try again.";
+          } else if (code === "FACE_DETECTION_FAILED") {
+            errorMsg = `Face not detected: ${msg}. Ensure face is clearly visible.`;
+          } else if (code === "FACE_SERVICE_TIMEOUT") {
+            errorMsg = "⏱️ Face service took too long. Try again.";
+          } else if (code === "FACE_SERVICE_UNAVAILABLE") {
+            errorMsg =
+              "🔧 Face service not configured. Contact administrator.";
+          } else {
+            errorMsg = msg || "Face registration failed.";
+          }
+        } else if (error.message?.includes("network")) {
+          errorMsg = "🌐 Network error. Check your connection.";
+        }
+
+        setMessage(errorMsg, true);
+
+        // Re-enable button
+        if (registerBtn) {
+          registerBtn.disabled = false;
+          registerBtn.textContent = "📷 Register Face";
+        }
       }
     }, 3000);
   } catch (error) {
-    console.error("Face registration error", error);
-    registerMsg.textContent = "Error accessing camera.";
-    registerMsg.style.color = "red";
+    console.error("[registerFace] Camera access error", {
+      message: error.message,
+      name: error.name,
+      code: error.code,
+      fullError: error,
+    });
+
+    let errorMsg = "Error accessing camera.";
+    if (error.name === "NotAllowedError") {
+      errorMsg =
+        "📷 Camera permission denied. Enable camera in your browser settings.";
+    } else if (error.name === "NotFoundError") {
+      errorMsg = "📷 No camera found. Check your device.";
+    } else if (error.name === "NotReadableError") {
+      errorMsg = "📷 Camera is in use by another application.";
+    }
+
+    setMessage(errorMsg, true);
+
+    // Re-enable button
+    if (registerBtn) {
+      registerBtn.disabled = false;
+      registerBtn.textContent = "📷 Register Face";
+    }
   }
 }
 

@@ -19,8 +19,15 @@ export const registerFace = async (req, res) => {
   try {
     const { studentId, image } = req.body;
 
+    // Validate input
     if (!image) {
+      console.warn("[mlController.registerFace] Missing image in request");
       return res.status(400).json({ message: "image is required" });
+    }
+
+    if (typeof image !== "string" || image.length === 0) {
+      console.warn("[mlController.registerFace] Invalid image format");
+      return res.status(400).json({ message: "image must be a non-empty base64 string" });
     }
 
     const student = await User.findOne({
@@ -28,23 +35,119 @@ export const registerFace = async (req, res) => {
       role: "student",
     });
     if (!student) {
+      console.warn("[mlController.registerFace] Student not found", { studentId });
       return res.status(404).json({ message: "Student not found" });
     }
 
+    // Authorization: students can only register their own face
     if (String(student._id) !== String(req.user._id)) {
+      console.warn("[mlController.registerFace] Unauthorized attempt", {
+        userId: req.user._id,
+        studentId: student._id,
+      });
       return res.status(403).json({ message: "You can only register your own face" });
     }
 
-    await axios.post(
+    // Check if face ML service is configured and reachable
+    if (!FACE_ML_SERVICE_URL || FACE_ML_SERVICE_URL.includes("localhost:5000")) {
+      console.error("[mlController.registerFace] Face ML service misconfigured", {
+        url: FACE_ML_SERVICE_URL,
+      });
+      return res.status(503).json({
+        message:
+          "Face recognition service not properly configured. Contact administrator.",
+        code: "FACE_SERVICE_UNAVAILABLE",
+      });
+    }
+
+    console.info("[mlController.registerFace] Calling face ML service", {
+      studentId: student._id,
+      serviceUrl: FACE_ML_SERVICE_URL,
+      imageSize: image.length,
+    });
+
+    const mlResponse = await axios.post(
       `${FACE_ML_SERVICE_URL}/register_face`,
       { student_id: student.rollNo || String(student._id), image },
       { timeout: 30_000 }
     );
 
-    res.status(200).json({ message: "Face registered successfully" });
+    console.info("[mlController.registerFace] Success", {
+      studentId: student._id,
+      response: mlResponse.data,
+    });
+
+    res.status(200).json({
+      message: "Face registered successfully",
+      data: mlResponse.data,
+    });
   } catch (error) {
-    console.error("[mlController.registerFace]", error.message);
-    res.status(500).json({ message: "Error registering face" });
+    // Detailed error logging
+    if (error.code === "ECONNREFUSED") {
+      console.error("[mlController.registerFace] Face ML service not running", {
+        url: FACE_ML_SERVICE_URL,
+        error: error.message,
+      });
+      return res.status(503).json({
+        message: "Face recognition service is not running",
+        code: "FACE_SERVICE_NOT_RUNNING",
+      });
+    }
+
+    if (error.code === "ENOTFOUND" || error.code === "EHOSTUNREACH") {
+      console.error("[mlController.registerFace] Face ML service unreachable", {
+        url: FACE_ML_SERVICE_URL,
+        error: error.message,
+      });
+      return res.status(503).json({
+        message: "Face recognition service is unreachable",
+        code: "FACE_SERVICE_UNREACHABLE",
+      });
+    }
+
+    if (error.response?.status === 400) {
+      const mlError = error.response.data?.error || "Face detection failed";
+      console.warn("[mlController.registerFace] Face detection error", {
+        studentId: req.user._id,
+        error: mlError,
+      });
+      return res.status(400).json({
+        message: mlError,
+        code: "FACE_DETECTION_FAILED",
+      });
+    }
+
+    if (error.response?.status === 404) {
+      console.warn("[mlController.registerFace] Service endpoint not found", {
+        endpoint: `${FACE_ML_SERVICE_URL}/register_face`,
+      });
+      return res.status(503).json({
+        message: "Face registration endpoint not available on ML service",
+        code: "ENDPOINT_NOT_FOUND",
+      });
+    }
+
+    if (error.code === "ECONNABORTED" || error.code === "ETIMEDOUT") {
+      console.error("[mlController.registerFace] Timeout", {
+        url: FACE_ML_SERVICE_URL,
+        error: error.message,
+      });
+      return res.status(504).json({
+        message: "Face recognition service timed out",
+        code: "FACE_SERVICE_TIMEOUT",
+      });
+    }
+
+    console.error("[mlController.registerFace] Unexpected error", {
+      studentId: req.user._id,
+      error: error.message,
+      status: error.response?.status,
+    });
+
+    res.status(error.response?.status || 500).json({
+      message: error.response?.data?.error || "Error registering face",
+      code: "FACE_REGISTRATION_FAILED",
+    });
   }
 };
 
