@@ -22,6 +22,18 @@ const buildHeaders = (isJson = true) => {
   return headers;
 };
 
+const makeHttpError = (path, status, data) => {
+  const message = data?.message || data?.error || "Request failed";
+  const err = new Error(message);
+  err.isHttpError = true;
+  err.status = status;
+  err.data = data;
+  // Axios-compatible shape (student.js expects error.response.data/code)
+  err.response = { status, data };
+  err.path = path;
+  return err;
+};
+
 export const apiGet = async (path) => {
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -33,9 +45,9 @@ export const apiGet = async (path) => {
         console.error("API GET unauthorized:", path, payload.message || "No message");
         try { localStorage.removeItem("token"); localStorage.removeItem("user"); } catch (e) { /* ignore */ }
         window.location.href = "index.html";
-        throw new Error(payload.message || "Unauthorized");
+        throw makeHttpError(path, res.status, payload);
       }
-      throw new Error(payload.message || "Request failed");
+      throw makeHttpError(path, res.status, payload);
     }
     return res.json();
   } catch (err) {
@@ -57,9 +69,9 @@ export const apiPost = async (path, body) => {
         console.error("API POST unauthorized:", path, data.message || "No message");
         try { localStorage.removeItem("token"); localStorage.removeItem("user"); } catch (e) { /* ignore */ }
         window.location.href = "index.html";
-        throw new Error(data.message || "Unauthorized");
+        throw makeHttpError(path, res.status, data);
       }
-      throw new Error(data.message || "Request failed");
+      throw makeHttpError(path, res.status, data);
     }
     return data;
   } catch (err) {
@@ -81,9 +93,9 @@ export const apiPut = async (path, body) => {
         console.error("API PUT unauthorized:", path, data.message || "No message");
         try { localStorage.removeItem("token"); localStorage.removeItem("user"); } catch (e) { /* ignore */ }
         window.location.href = "index.html";
-        throw new Error(data.message || "Unauthorized");
+        throw makeHttpError(path, res.status, data);
       }
-      throw new Error(data.message || "Request failed");
+      throw makeHttpError(path, res.status, data);
     }
     return data;
   } catch (err) {
@@ -104,9 +116,9 @@ export const apiDelete = async (path) => {
         console.error("API DELETE unauthorized:", path, data.message || "No message");
         try { localStorage.removeItem("token"); localStorage.removeItem("user"); } catch (e) { /* ignore */ }
         window.location.href = "index.html";
-        throw new Error(data.message || "Unauthorized");
+        throw makeHttpError(path, res.status, data);
       }
-      throw new Error(data.message || "Request failed");
+      throw makeHttpError(path, res.status, data);
     }
     return data;
   } catch (err) {
@@ -127,9 +139,9 @@ export const apiDownload = async (path, filename = "download.csv") => {
         console.error("API DOWNLOAD unauthorized:", path, payload.message || "No message");
         try { localStorage.removeItem("token"); localStorage.removeItem("user"); } catch (e) { /* ignore */ }
         window.location.href = "index.html";
-        throw new Error(payload.message || "Unauthorized");
+        throw makeHttpError(path, res.status, payload);
       }
-      throw new Error(payload.message || "Download request failed");
+      throw makeHttpError(path, res.status, payload);
     }
     const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);

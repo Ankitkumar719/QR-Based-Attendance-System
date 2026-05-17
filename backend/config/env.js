@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export const env = {
+  NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 5000,
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.JWT_SECRET || "changeme_super_secret",
@@ -17,12 +18,14 @@ export const env = {
   ML_TRAIN_SECRET: process.env.ML_TRAIN_SECRET || "",
   /** Face recognition Python service (backend/ml/face_recognition_service.py)
    *  Must run on separate port. Defaults to http://localhost:5001
-   *  For production: set FACE_ML_SERVICE_URL env var explicitly
+   *  For production: set FACE_SERVICE_URL (or FACE_ML_SERVICE_URL) explicitly
    */
   FACE_ML_SERVICE_URL:
+    process.env.FACE_SERVICE_URL ||
     process.env.FACE_ML_SERVICE_URL ||
     process.env.PYTHON_SERVICE_URL ||
     "http://localhost:5001",
+  FACE_ML_TIMEOUT_MS: Number(process.env.FACE_ML_TIMEOUT_MS || 30000),
   DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL || "admin@example.com",
   DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || "admin123",
   DEFAULT_ADMIN_NAME: process.env.DEFAULT_ADMIN_NAME || "Super Admin"

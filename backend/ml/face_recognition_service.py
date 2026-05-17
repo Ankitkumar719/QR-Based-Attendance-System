@@ -231,4 +231,6 @@ def recognize_face():
 if __name__ == '__main__':
     logger.info("Starting Face Recognition Service...")
     logger.info(f"Face data directory: {os.path.abspath(FACE_DATA_DIR)}")
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    port = int(os.getenv("PORT", "5001"))
+    debug = os.getenv("FLASK_DEBUG", "").lower() in ("1", "true", "yes", "on")
+    app.run(host='0.0.0.0', port=port, debug=debug)

@@ -14,6 +14,66 @@ import {
 // Separate service — do not confuse with shortage prediction on port 8000
 // ---------------------------------------------------------------------------
 const FACE_ML_SERVICE_URL = env.FACE_ML_SERVICE_URL;
+const FACE_ML_TIMEOUT_MS = env.FACE_ML_TIMEOUT_MS || 30_000;
+
+const isLocalhostUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return (
+    url.includes("localhost") ||
+    url.includes("127.0.0.1") ||
+    url.includes("0.0.0.0")
+  );
+};
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const shouldRetryFaceMlError = (error) => {
+  if (!error) return false;
+  if (
+    error.code === "ECONNRESET" ||
+    error.code === "EAI_AGAIN" ||
+    error.code === "ENETUNREACH" ||
+    error.code === "EHOSTUNREACH" ||
+    error.code === "ECONNREFUSED" ||
+    error.code === "ENOTFOUND" ||
+    error.code === "ECONNABORTED" ||
+    error.code === "ETIMEDOUT"
+  ) {
+    return true;
+  }
+  const status = error.response?.status;
+  if ([502, 503, 504].includes(status)) return true;
+  return false;
+};
+
+const postToFaceMlWithRetry = async (url, body, { timeoutMs, maxAttempts = 3 } = {}) => {
+  const attempts = Math.max(1, Number(maxAttempts) || 1);
+  const timeout = Number(timeoutMs) || FACE_ML_TIMEOUT_MS;
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await axios.post(url, body, { timeout });
+    } catch (error) {
+      lastError = error;
+      const retryable = shouldRetryFaceMlError(error);
+      if (!retryable || attempt === attempts) throw error;
+      const backoffMs = 250 * Math.pow(2, attempt - 1);
+      console.warn("[faceMlClient] retrying request", {
+        attempt,
+        attempts,
+        backoffMs,
+        url,
+        code: error.code,
+        status: error.response?.status,
+        message: error.message,
+      });
+      await sleep(backoffMs);
+    }
+  }
+
+  throw lastError;
+};
 
 export const registerFace = async (req, res) => {
   try {
@@ -48,14 +108,24 @@ export const registerFace = async (req, res) => {
       return res.status(403).json({ message: "You can only register your own face" });
     }
 
-    // Check if face ML service is configured and reachable
-    if (!FACE_ML_SERVICE_URL || FACE_ML_SERVICE_URL.includes("localhost:5000")) {
-      console.error("[mlController.registerFace] Face ML service misconfigured", {
-        url: FACE_ML_SERVICE_URL,
+    // Check if face ML service is configured and reachable.
+    // In production, a localhost URL means the backend can't reach the ML service.
+    if (!FACE_ML_SERVICE_URL) {
+      console.error("[mlController.registerFace] Face ML service URL missing");
+      return res.status(503).json({
+        message: "Face recognition service URL is not configured.",
+        code: "FACE_SERVICE_UNAVAILABLE",
       });
+    }
+
+    if (env.NODE_ENV === "production" && isLocalhostUrl(FACE_ML_SERVICE_URL)) {
+      console.error(
+        "[mlController.registerFace] Face ML service misconfigured (localhost in prod)",
+        { url: FACE_ML_SERVICE_URL }
+      );
       return res.status(503).json({
         message:
-          "Face recognition service not properly configured. Contact administrator.",
+          "Face recognition service is not configured for production. Set FACE_SERVICE_URL.",
         code: "FACE_SERVICE_UNAVAILABLE",
       });
     }
@@ -66,11 +136,13 @@ export const registerFace = async (req, res) => {
       imageSize: image.length,
     });
 
-    const mlResponse = await axios.post(
-      `${FACE_ML_SERVICE_URL}/register_face`,
-      { student_id: student.rollNo || String(student._id), image },
-      { timeout: 30_000 }
-    );
+    const endpoint = `${FACE_ML_SERVICE_URL}/register_face`;
+    const payload = { student_id: student.rollNo || String(student._id), image };
+
+    const mlResponse = await postToFaceMlWithRetry(endpoint, payload, {
+      timeoutMs: FACE_ML_TIMEOUT_MS,
+      maxAttempts: env.NODE_ENV === "production" ? 3 : 1,
+    });
 
     console.info("[mlController.registerFace] Success", {
       studentId: student._id,
@@ -142,10 +214,14 @@ export const registerFace = async (req, res) => {
       studentId: req.user._id,
       error: error.message,
       status: error.response?.status,
+      response: error.response?.data,
     });
 
     res.status(error.response?.status || 500).json({
-      message: error.response?.data?.error || "Error registering face",
+      message:
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Error registering face",
       code: "FACE_REGISTRATION_FAILED",
     });
   }
