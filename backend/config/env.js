@@ -2,11 +2,19 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const requiredEnv = (name) => {
+  const value = process.env[name];
+  if (!value || !value.trim()) {
+    throw new Error(`Environment variable ${name} is required and must not be empty.`);
+  }
+  return value;
+};
+
 export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: process.env.PORT || 5000,
-  MONGO_URI: process.env.MONGO_URI,
-  JWT_SECRET: process.env.JWT_SECRET || "changeme_super_secret",
+  MONGO_URI: requiredEnv("MONGO_URI"),
+  JWT_SECRET: requiredEnv("JWT_SECRET"),
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "1d",
   EMAIL_HOST: process.env.EMAIL_HOST || "",
   EMAIL_PORT: process.env.EMAIL_PORT || 587,
@@ -21,7 +29,7 @@ export const env = {
    */
   FACE_ML_SERVICE_URL: process.env.FACE_ML_SERVICE_URL || process.env.FACE_SERVICE_URL || "",
   FACE_ML_TIMEOUT_MS: Number(process.env.FACE_ML_TIMEOUT_MS || 30000),
-  DEFAULT_ADMIN_EMAIL: process.env.DEFAULT_ADMIN_EMAIL || "admin@example.com",
-  DEFAULT_ADMIN_PASSWORD: process.env.DEFAULT_ADMIN_PASSWORD || "admin123",
+  DEFAULT_ADMIN_EMAIL: requiredEnv("DEFAULT_ADMIN_EMAIL"),
+  DEFAULT_ADMIN_PASSWORD: requiredEnv("DEFAULT_ADMIN_PASSWORD"),
   DEFAULT_ADMIN_NAME: process.env.DEFAULT_ADMIN_NAME || "Super Admin"
 };

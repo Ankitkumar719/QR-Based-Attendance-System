@@ -262,21 +262,16 @@ Expires at: ${new Date(session.expiresAt).toLocaleTimeString()}`;
   } catch (error) {
     console.error("Error starting session", error);
 
-    // For testing purposes, generate a mock QR code if API fails
-    const mockToken = "test-qr-" + Date.now();
-    currentQrToken = mockToken;
+    if (sessionControls) {
+      sessionControls.style.display = "none";
+    }
 
-    const classDisplayName = `${sessionData.branch} - ${sessionData.subjectCode} (${sessionData.section})`;
+    if (sessionInfo) {
+      sessionInfo.textContent = `Failed to start attendance session: ${error?.message || "Unknown error"}. Please refresh and try again.`;
+    }
 
-    sessionInfo.textContent = `TEST MODE - Session started for: ${classDisplayName}
-Date: ${sessionData.date}
-Token: ${mockToken}
-Note: This is a test QR code. Real session creation failed: ${error.message}`;
-
-    const canvas = document.getElementById("sessionQr");
-    qr = new QRious({ element: canvas, size: 200, value: mockToken });
-
-    loadStudents(classId);
+    currentQrToken = null;
+    return;
   }
 }
 

@@ -302,6 +302,11 @@ export const verifyFace = async (req, res) => {
       { timeoutMs: FACE_ML_TIMEOUT_MS }
     );
 
+    if (!out || typeof out !== "object") {
+      console.error("verifyFace: invalid face worker response", { out });
+      return res.status(500).json({ message: "Face recognition service returned invalid response", code: "FACE_SERVICE_ERROR" });
+    }
+
     if (!out.ok) {
       const status = out.status || 500;
       if (status === 400) {
