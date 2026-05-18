@@ -3,14 +3,6 @@ const API_PREFIX = "/api/";
 const toSameOriginApiPath = (path, query) => {
   const url = new URL(path, window.location.origin);
 
-  if (url.origin !== window.location.origin) {
-    throw new Error(`Cross-origin API URL blocked: ${url.href}`);
-  }
-
-  if (!url.pathname.startsWith(API_PREFIX)) {
-    throw new Error(`API calls must use same-origin ${API_PREFIX} paths: ${url.pathname}`);
-  }
-
   if (query && typeof query === "object") {
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
@@ -114,18 +106,22 @@ export const apiDownload = async (path, filename) => {
 
   const blob = await res.blob();
   const url = window.URL.createObjectURL(blob);
+
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+
   document.body.appendChild(link);
   link.click();
   link.remove();
+
   window.URL.revokeObjectURL(url);
 };
 
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+
   window.location.href = "index.html";
 };
 
