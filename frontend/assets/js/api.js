@@ -1,4 +1,26 @@
-export const API_BASE_URL = "";
+const API_PREFIX = "/api/";
+
+const toSameOriginApiPath = (path, query) => {
+  const url = new URL(path, window.location.origin);
+
+  if (url.origin !== window.location.origin) {
+    throw new Error(`Cross-origin API URL blocked: ${url.href}`);
+  }
+
+  if (!url.pathname.startsWith(API_PREFIX)) {
+    throw new Error(`API calls must use same-origin ${API_PREFIX} paths: ${url.pathname}`);
+  }
+
+  if (query && typeof query === "object") {
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.set(key, value);
+      }
+    });
+  }
+
+  return `${url.pathname}${url.search}${url.hash}`;
+};
 
 export const getToken = () => localStorage.getItem("token");
 
@@ -29,7 +51,7 @@ const makeHttpError = async (res) => {
 };
 
 export const apiPost = async (path, body) => {
-  const res = await fetch(path, {
+  const res = await fetch(toSameOriginApiPath(path), {
     method: "POST",
     headers: buildHeaders(true),
     body: JSON.stringify(body)
@@ -42,8 +64,8 @@ export const apiPost = async (path, body) => {
   return res.json();
 };
 
-export const apiGet = async (path) => {
-  const res = await fetch(path, {
+export const apiGet = async (path, query) => {
+  const res = await fetch(toSameOriginApiPath(path, query), {
     headers: buildHeaders(false)
   });
 
@@ -55,7 +77,7 @@ export const apiGet = async (path) => {
 };
 
 export const apiPut = async (path, body) => {
-  const res = await fetch(path, {
+  const res = await fetch(toSameOriginApiPath(path), {
     method: "PUT",
     headers: buildHeaders(true),
     body: JSON.stringify(body)
@@ -69,7 +91,7 @@ export const apiPut = async (path, body) => {
 };
 
 export const apiDelete = async (path) => {
-  const res = await fetch(path, {
+  const res = await fetch(toSameOriginApiPath(path), {
     method: "DELETE",
     headers: buildHeaders(false)
   });
@@ -79,6 +101,26 @@ export const apiDelete = async (path) => {
   }
 
   return res.json();
+};
+
+export const apiDownload = async (path, filename) => {
+  const res = await fetch(toSameOriginApiPath(path), {
+    headers: buildHeaders(false)
+  });
+
+  if (!res.ok) {
+    throw await makeHttpError(res);
+  }
+
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
 };
 
 export const logout = () => {

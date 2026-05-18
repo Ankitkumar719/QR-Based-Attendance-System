@@ -11,7 +11,7 @@
  *   predictShortageRisk(72.5, 12).then(console.log).catch(console.error);
  */
 
-import { apiPost } from "../assets/js/api.js";
+import { apiPost } from "../assets/js/api.js?v=20260518";
 
 /**
  * Predict attendance shortage risk through Express → Flask.
@@ -34,14 +34,9 @@ export async function predictShortageRisk(attendancePercentage, absentDays) {
 
 // --- Standalone fetch (no api.js) ---
 export async function predictShortageRiskRaw(attendancePercentage, absentDays) {
-  const API_BASE =
-    window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : window.location.origin;
-
   const token = localStorage.getItem("token");
 
-  const res = await fetch(`${API_BASE}/api/ml/predict-shortage`, {
+  const res = await fetch("/api/ml/predict-shortage", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

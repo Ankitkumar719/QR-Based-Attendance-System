@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete, apiDownload, ensureAuth, getUser, logout } from "./api.js";
+import { apiGet, apiPost, apiPut, apiDelete, apiDownload, ensureAuth, getUser, logout } from "./api.js?v=20260518";
 
 const user = ensureAuth(["admin"]);
 
