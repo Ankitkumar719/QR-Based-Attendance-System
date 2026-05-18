@@ -317,7 +317,7 @@ async function loadStats() {
     `;
 
     // Update admin name
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const user = JSON.parse(sessionStorage.getItem("user") || "{}");
     const adminNameEl = document.getElementById("adminNameDisplay");
     if (adminNameEl && user.name) {
       adminNameEl.textContent = user.name;

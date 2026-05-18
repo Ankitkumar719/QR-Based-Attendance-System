@@ -26,7 +26,7 @@ logoutBtn?.addEventListener("click", async () => {
     console.error('Error during logout:', err);
   } finally {
     // Ensure client-side cleanup and redirect always happen
-    try { localStorage.clear(); } catch (e) { console.error('localStorage clear failed', e); }
+    try { sessionStorage.clear(); } catch (e) { console.error('sessionStorage clear failed', e); }
     window.location.href = "index.html";
   }
 });
@@ -697,11 +697,11 @@ async function startAutoSession(slotData) {
     const className = typeof slotData === 'string' ? response.className : 
       `${slotData.courseCode} - ${slotData.courseName} | ${slotData.department} Sem ${slotData.semester} ${slotData.section}`;
     
-    // Store session data in localStorage for the session page
-    localStorage.setItem('currentSessionId', response.id);
-    localStorage.setItem('currentQrToken', response.qrToken);
-    localStorage.setItem('currentClassName', className || 'Active Session');
-    localStorage.setItem('currentExpiresAt', response.expiresAt);
+    // Store session data in sessionStorage for the session page
+    sessionStorage.setItem('currentSessionId', response.id);
+    sessionStorage.setItem('currentQrToken', response.qrToken);
+    sessionStorage.setItem('currentClassName', className || 'Active Session');
+    sessionStorage.setItem('currentExpiresAt', response.expiresAt);
     
     // Redirect to separate session page
     window.location.href = `session.html?sessionId=${response.id}&qrToken=${response.qrToken}&className=${encodeURIComponent(className || 'Active Session')}&expiresAt=${response.expiresAt}`;
@@ -719,11 +719,11 @@ async function viewActiveSession(classId) {
     
     const className = response.className || 'Active Session';
     
-    // Store session data in localStorage for the session page
-    localStorage.setItem('currentSessionId', response.id);
-    localStorage.setItem('currentQrToken', response.qrToken);
-    localStorage.setItem('currentClassName', className);
-    localStorage.setItem('currentExpiresAt', response.expiresAt);
+    // Store session data in sessionStorage for the session page
+    sessionStorage.setItem('currentSessionId', response.id);
+    sessionStorage.setItem('currentQrToken', response.qrToken);
+    sessionStorage.setItem('currentClassName', className);
+    sessionStorage.setItem('currentExpiresAt', response.expiresAt);
     
     // Redirect to separate session page
     window.location.href = `session.html?sessionId=${response.id}&qrToken=${response.qrToken}&className=${encodeURIComponent(className)}&expiresAt=${response.expiresAt}`;

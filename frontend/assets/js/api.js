@@ -14,10 +14,10 @@ const toSameOriginApiPath = (path, query) => {
   return `${url.pathname}${url.search}${url.hash}`;
 };
 
-export const getToken = () => localStorage.getItem("token");
+export const getToken = () => sessionStorage.getItem("token");
 
 export const getUser = () => {
-  const raw = localStorage.getItem("user");
+  const raw = sessionStorage.getItem("user");
   return raw ? JSON.parse(raw) : null;
 };
 
@@ -119,8 +119,8 @@ export const apiDownload = async (path, filename) => {
 };
 
 export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  sessionStorage.removeItem("token");
+  sessionStorage.removeItem("user");
 
   window.location.href = "index.html";
 };

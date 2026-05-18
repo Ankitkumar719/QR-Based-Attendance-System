@@ -29,8 +29,8 @@ form.addEventListener("submit", async (e) => {
       throw new Error(`You are not registered as a ${role}.`);
     }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
+    sessionStorage.setItem("token", data.token);
+    sessionStorage.setItem("user", JSON.stringify(data.user));
     redirectByRole(data.user.role);
   } catch (err) {
     errorEl.textContent = err.message || "Login failed";

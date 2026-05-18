@@ -112,7 +112,7 @@ if (studentDateInput) {
 
 // Update welcome banner with user info
 function updateWelcomeBanner() {
-  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const storedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
   const nameEl = document.getElementById("studentNameDisplay");
   const infoEl = document.getElementById("studentInfoDisplay");
   const dateEl = document.getElementById("currentDateStudent");
@@ -1033,7 +1033,7 @@ async function registerFace() {
           return;
         }
 
-        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const storedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
         const studentIdForMl = storedUser.rollNo || profile.studentId;
         console.log("[registerFace] Sending face registration request", {
           studentId: studentIdForMl,
