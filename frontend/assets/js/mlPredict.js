@@ -1,7 +1,7 @@
 /**
  * Attendance shortage risk prediction (proxied via Express → Flask).
  */
-import { apiPost } from "./api.js?v=20260518";
+import { apiPost } from "./api.js?v=20260526";
 
 /**
  * @param {number} attendancePercentage

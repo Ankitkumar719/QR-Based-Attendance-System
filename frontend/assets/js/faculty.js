@@ -1,4 +1,4 @@
-import { apiGet, apiPost, ensureAuth, getUser, logout } from "./api.js?v=20260518";
+import { apiGet, apiPost, ensureAuth, getUser, logout } from "./api.js?v=20260526";
 
 const user = ensureAuth(["faculty"]);
 

@@ -1,4 +1,4 @@
-import { apiPost, getUser } from "./api.js?v=20260518";
+import { apiPost, getUser } from "./api.js?v=20260526";
 
 const form = document.getElementById("loginForm");
 const errorEl = document.getElementById("loginError");
