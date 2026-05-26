@@ -1080,3 +1080,610 @@ table.card td {
   color: var(--gray-300) !important;
   font-size: var(--font-size-sm) !important;
 }
+
+/* ============================================
+   FINAL MOBILE APP SHELL
+   Major fix: this layer overrides older tablet/mobile collapse rules so phones
+   get a dedicated dashboard experience instead of a squeezed desktop layout.
+   ============================================ */
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
+}
+
+body {
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  :root {
+    --mobile-topbar-height: 64px;
+    --mobile-bottom-nav-height: 76px;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(99, 102, 241, 0.24), transparent 34rem),
+      linear-gradient(160deg, #0f172a 0%, #111827 48%, #172554 100%);
+  }
+
+  .mobile-topbar {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    inset: 0 0 auto 0;
+    width: 100%;
+    height: var(--mobile-topbar-height);
+    padding: env(safe-area-inset-top, 0) 12px 0;
+    background: rgba(15, 23, 42, 0.94);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 14px 30px rgba(2, 6, 23, 0.24);
+    backdrop-filter: blur(18px);
+    z-index: 80;
+  }
+
+  .mobile-menu-btn,
+  .mobile-profile-btn {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    padding: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 12px;
+    color: transparent;
+    font-size: 0;
+    box-shadow: none;
+  }
+
+  .mobile-menu-btn::before {
+    content: "\2630";
+  }
+
+  .mobile-profile-btn::before {
+    content: "SA";
+    font-size: 0.72rem !important;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .mobile-menu-btn::before,
+  .mobile-profile-btn::before {
+    color: #f8fafc;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .mobile-brand {
+    min-width: 0;
+    color: #f8fafc;
+    font-size: clamp(1rem, 3.2vw, 1.18rem);
+    font-weight: 750;
+    line-height: 1.1;
+    letter-spacing: 0;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(304px, 84vw);
+    max-width: min(304px, 84vw);
+    height: 100dvh;
+    margin: 0;
+    padding: calc(env(safe-area-inset-top, 0) + 20px) 18px 18px;
+    overflow-y: auto;
+    transform: translate3d(-105%, 0, 0);
+    opacity: 0.98;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 75;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 18px 0 45px rgba(2, 6, 23, 0.32);
+    transition: transform 260ms ease, visibility 260ms ease;
+    will-change: transform;
+  }
+
+  .sidebar.open {
+    transform: translate3d(0, 0, 0);
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
+  body.sidebar-open::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(2, 6, 23, 0.6);
+    backdrop-filter: blur(2px);
+  }
+
+  .sidebar h2 {
+    font-size: clamp(1.05rem, 4vw, 1.25rem);
+  }
+
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .sidebar-btn,
+  #logoutBtn {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 12px;
+  }
+
+  .main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0;
+    margin-left: 0 !important;
+    padding: calc(var(--mobile-topbar-height) + 18px) clamp(12px, 3.6vw, 24px) calc(var(--mobile-bottom-nav-height) + 22px) !important;
+    overflow-x: hidden;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 !important;
+  }
+
+  .card,
+  .cards,
+  .grid,
+  form,
+  .main-content > *,
+  .container > * {
+    min-width: 0;
+  }
+
+  #dashboardView > h3,
+  #createUserView > h3,
+  #departmentsView > h3,
+  #sectionsView > h3,
+  #coursesView > h3,
+  #timetableView > h3,
+  #promoteView > h3,
+  #analyticsView > h3,
+  #faceRegsView > h3,
+  #profileView > h3,
+  #markAttendanceView > h3,
+  #viewAttendanceView > h3,
+  #timeTableView > h3 {
+    font-size: clamp(1.18rem, 4.8vw, 1.75rem) !important;
+    line-height: 1.2;
+    margin-bottom: 16px !important;
+  }
+
+  .card {
+    padding: clamp(15px, 3.6vw, 20px);
+    border-radius: 12px !important;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 16px 34px rgba(2, 6, 23, 0.26);
+    backdrop-filter: blur(18px);
+  }
+
+  .card h2 {
+    font-size: clamp(1.25rem, 5vw, 1.6rem) !important;
+  }
+
+  .card h3,
+  .card h4,
+  .card h5 {
+    font-size: clamp(1rem, 4vw, 1.22rem) !important;
+    line-height: 1.25;
+  }
+
+  .card p,
+  .card small,
+  label,
+  input,
+  select,
+  textarea,
+  button {
+    font-size: clamp(0.86rem, 3.3vw, 0.98rem);
+  }
+
+  .cards,
+  #dashboardCards,
+  #dashboardSummaryCards,
+  #subjectCards,
+  #todaysClassesList,
+  #adminStats.cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px;
+  }
+
+  .cards > .card,
+  #dashboardCards > .card,
+  #dashboardSummaryCards > .card,
+  #subjectCards > .card,
+  #todaysClassesList > .card,
+  #adminStats.cards > .card {
+    min-height: 132px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .grid,
+  form.grid,
+  .card > div[style*="display: grid"],
+  .card form > div[style*="display: grid"],
+  form[style*="display: grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  #dashboardView > div[style*="display: grid"],
+  #studentAnalyticsSummary,
+  #semesterDistribution,
+  #systemSummary > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #dashboardView button[onclick],
+  .quick-session-btn,
+  .small-btn,
+  button {
+    min-width: 0;
+  }
+
+  .mobile-bottom-nav {
+    display: grid !important;
+    position: fixed;
+    inset: auto 10px calc(10px + env(safe-area-inset-bottom, 0)) 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    min-height: 66px;
+    padding: 8px;
+    z-index: 80;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 42px rgba(2, 6, 23, 0.36);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-nav-item {
+    all: unset;
+    min-width: 0;
+    min-height: 48px;
+    padding: 7px 4px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #cbd5e1;
+    border-radius: 13px;
+    cursor: pointer;
+    text-align: center;
+    font-size: clamp(0.68rem, 2.5vw, 0.78rem);
+    line-height: 1.1;
+    transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+  }
+
+  .mobile-nav-item.active {
+    background: rgba(99, 102, 241, 0.18);
+    color: #fff;
+  }
+
+  .mobile-nav-item span:first-child {
+    width: 20px;
+    height: 20px;
+    font-size: 0;
+    line-height: 1;
+  }
+
+  .mobile-nav-item span:first-child::before {
+    color: currentColor;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .mobile-nav-item[data-target="dashboardBtn"] span:first-child::before {
+    content: "D";
+  }
+
+  .mobile-nav-item[data-target="timeTableBtn"] span:first-child::before {
+    content: "C";
+  }
+
+  .mobile-nav-item[data-target="analyticsBtn"] span:first-child::before {
+    content: "A";
+  }
+
+  .mobile-nav-item[data-target="profileBtn"] span:first-child::before {
+    content: "P";
+  }
+
+  .mobile-nav-item span:last-child {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #adminChart,
+  #facultyChart,
+  #studentChart {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #qrReader,
+  #qrReader video,
+  #qrReader iframe,
+  #qrReader canvas,
+  #facialReader {
+    width: 100% !important;
+    max-width: 360px !important;
+    height: auto !important;
+  }
+}
+
+@media (min-width: 681px) and (max-width: 960px) {
+  table,
+  .card table,
+  table.card {
+    display: table !important;
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 640px !important;
+    table-layout: auto !important;
+    overflow: visible;
+  }
+
+  table thead,
+  table tbody {
+    display: table-header-group;
+  }
+
+  table tbody {
+    display: table-row-group;
+  }
+
+  table tr {
+    display: table-row;
+  }
+
+  table th,
+  table td {
+    display: table-cell;
+    width: auto;
+    min-width: 110px !important;
+    padding: 10px 12px;
+    white-space: normal !important;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .card:has(> table),
+  div[style*="overflow-x: auto"],
+  div[style*="overflow-y: auto"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 680px) {
+  .main-content {
+    padding: 78px 12px 94px !important;
+  }
+
+  .cards,
+  #dashboardCards,
+  #dashboardSummaryCards,
+  #subjectCards,
+  #todaysClassesList,
+  #adminStats.cards,
+  .grid,
+  form.grid,
+  .card > div[style*="display: grid"],
+  .card form > div[style*="display: grid"],
+  form[style*="display: grid"],
+  #dashboardView > div[style*="display: grid"],
+  #studentAnalyticsSummary,
+  #semesterDistribution,
+  #systemSummary > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .card > div[style*="display: flex"],
+  [style*="display: flex;"] {
+    max-width: 100%;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+  }
+
+  button,
+  .sidebar-btn,
+  input,
+  select,
+  textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0 !important;
+  }
+
+  button[style*="width: auto"],
+  .small-btn {
+    width: auto;
+  }
+
+  input[style*="min-width"],
+  select[style*="min-width"],
+  [style*="min-width: 200px"],
+  [style*="min-width: 240px"],
+  [style*="width: 300px"],
+  [style*="max-width: 350px"] {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Data tables become stacked cards on phones; timetable matrices keep scroll. */
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable),
+  table.card:not(#timeTable):not(#adminTimetable):not(#previewTable) {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) thead {
+    display: none !important;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) tbody,
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) tr,
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) tbody tr {
+    margin-bottom: 12px;
+    padding: 14px;
+    border: 1px solid rgba(226, 232, 240, 0.15);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.82);
+    box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22);
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0 !important;
+    border: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.12);
+    color: #f8fafc;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td:last-child {
+    border-bottom: 0;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    color: #94a3b8;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td[colspan] {
+    display: block !important;
+    text-align: center !important;
+  }
+
+  table:not(#timeTable):not(#adminTimetable):not(#previewTable) td[colspan]::before {
+    content: none;
+  }
+
+  #timeTable,
+  #adminTimetable,
+  #previewTable {
+    display: table !important;
+    width: 100% !important;
+    min-width: 680px !important;
+    table-layout: auto !important;
+  }
+
+  #timeTable thead,
+  #adminTimetable thead,
+  #previewTable thead {
+    display: table-header-group !important;
+  }
+
+  #timeTable tbody,
+  #adminTimetable tbody,
+  #previewTable tbody {
+    display: table-row-group !important;
+  }
+
+  #timeTable tr,
+  #adminTimetable tr,
+  #previewTable tr {
+    display: table-row !important;
+  }
+
+  #timeTable th,
+  #timeTable td,
+  #adminTimetable th,
+  #adminTimetable td,
+  #previewTable th,
+  #previewTable td {
+    display: table-cell !important;
+    width: auto;
+    min-width: 110px !important;
+    padding: 10px !important;
+  }
+
+  #timeTableView,
+  #timetableView .card,
+  #promotionPreview .card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 390px) {
+  .main-content {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .mobile-bottom-nav {
+    inset: auto 6px calc(6px + env(safe-area-inset-bottom, 0)) 6px;
+    min-height: 62px;
+    padding: 6px;
+  }
+
+  .mobile-nav-item {
+    font-size: 0.66rem;
+  }
+}
+
+@media (max-width: 340px) {
+  .mobile-brand {
+    font-size: 0.94rem;
+  }
+
+  .mobile-nav-item span:last-child {
+    font-size: 0.62rem;
+  }
+}
