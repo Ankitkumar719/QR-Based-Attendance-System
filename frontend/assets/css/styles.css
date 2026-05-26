@@ -96,6 +96,7 @@ html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -106,6 +107,7 @@ body {
   color: var(--gray-100);
   min-height: 100vh;
   overflow-x: hidden;
+  max-width: 100vw;
 }
 
 img,
@@ -669,7 +671,7 @@ table.card td {
 
   th,
   td {
-    min-width: 130px;
+    min-width: auto !important;
   }
 
   .cards {
@@ -681,6 +683,31 @@ table.card td {
   #qrReader iframe,
   #qrReader canvas {
     width: 100% !important;
+    height: auto !important;
+  }
+
+  html,
+  body,
+  .container,
+  .main-content,
+  .sidebar,
+  .card,
+  .auth-container,
+  .modal-content {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  [style*="min-width"] {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  [style*="width: 300px"] {
+    width: 100% !important;
+  }
+
+  [style*="height: 300px"] {
     height: auto !important;
   }
 }
