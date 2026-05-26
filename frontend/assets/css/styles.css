@@ -124,6 +124,14 @@ table {
 
 table {
   min-width: 0;
+  table-layout: auto;
+  word-break: break-word;
+}
+
+th,
+td {
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* ============================================
@@ -662,16 +670,36 @@ table.card td {
   table,
   #adminTimetable,
   .card table {
+    width: 100%;
+    min-width: 0 !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    table-layout: fixed;
+  }
+
+  thead,
+  tbody,
+  tr {
     display: block;
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    min-width: 0 !important;
   }
 
   th,
   td {
-    min-width: auto !important;
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    text-align: left;
+    border: none;
+    padding: var(--space-3) 0;
+  }
+
+  th {
+    font-weight: 700;
+    margin-top: var(--space-3);
   }
 
   .cards {
