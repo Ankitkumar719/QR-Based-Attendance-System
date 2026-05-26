@@ -9,6 +9,11 @@
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
 <body>
+  <div class="mobile-topbar">
+    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open menu">☰</button>
+    <div class="mobile-brand">Smart Attendance</div>
+    <button id="mobileProfileBtn" class="mobile-profile-btn" aria-label="Profile">👤</button>
+  </div>
   <div class="sidebar">
     <h2>Smart Attendance</h2>
     <div class="sidebar-content">
@@ -201,5 +206,12 @@
   </div>
 
   <script type="module" src="assets/js/faculty.js?v=20260518"></script>
+  <script type="module" src="assets/js/mobile-nav.js?v=20260518"></script>
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <button type="button" class="mobile-nav-item" data-target="dashboardBtn"><span>🏠</span><span>Dashboard</span></button>
+    <button type="button" class="mobile-nav-item" data-target="timeTableBtn"><span>📚</span><span>Classes</span></button>
+    <button type="button" class="mobile-nav-item" data-target="analyticsBtn"><span>📈</span><span>Analytics</span></button>
+    <button type="button" class="mobile-nav-item" data-target="profileBtn"><span>👤</span><span>Profile</span></button>
+  </nav>
 </body>
 </html>

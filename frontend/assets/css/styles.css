@@ -142,6 +142,11 @@ td {
 /* ============================================
    3. FORMS & INPUTS (FIXED CONTRAST)
    ============================================ */
+.mobile-topbar,
+.mobile-bottom-nav {
+  display: none;
+}
+
 .form-group {
   margin-bottom: var(--space-5);
 }
@@ -621,18 +626,108 @@ table.card td {
 }
 
 @media (max-width: 1100px) {
+  .mobile-topbar {
+    display: flex;
+    position: fixed;
+    inset: 0 auto auto 0;
+    height: 64px;
+    padding: 0 var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    z-index: 70;
+  }
+
+  .mobile-menu-btn,
+  .mobile-profile-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .mobile-brand {
+    flex: 1;
+    text-align: center;
+    font-size: clamp(1rem, 2.8vw, 1.05rem);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    inset: auto 0 0 0;
+    padding: 0.65rem 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.96);
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
+    z-index: 70;
+    min-height: 72px;
+  }
+
+  .mobile-nav-item {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    max-width: 90px;
+    padding: 8px 6px;
+    border-radius: 16px;
+    color: rgba(203, 213, 225, 0.9);
+    transition: background 180ms ease, color 180ms ease;
+    text-align: center;
+    font-size: 0.8rem;
+  }
+
+  .mobile-nav-item.active,
+  .mobile-nav-item:hover {
+    background: rgba(99, 102, 241, 0.16);
+    color: #fff;
+  }
+
+  .mobile-nav-item span:first-child {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .mobile-topbar,
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     transform: translateX(-100%);
-    width: min(260px, 90vw);
-    max-width: 90vw;
+    width: min(280px, 85vw);
+    max-width: 100%;
     height: 100vh;
     padding: var(--space-5);
     border-radius: 0;
-    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.25);
-    z-index: 60;
+    box-shadow: 6px 0 30px rgba(0, 0, 0, 0.3);
+    z-index: 65;
     background: rgba(15, 23, 42, 0.98);
     overflow-y: auto;
   }
@@ -641,14 +736,16 @@ table.card td {
     transform: translateX(0);
   }
 
+  body.sidebar-open {
+    overflow: hidden;
+  }
+
   body.sidebar-open::before {
     content: '';
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
-    z-index: 55;
-    opacity: 1;
-    pointer-events: auto;
+    z-index: 60;
   }
 
   .sidebar-content {
@@ -666,7 +763,62 @@ table.card td {
   .main-content {
     margin-left: 0;
     width: 100%;
-    padding: var(--space-6);
+    padding: calc(var(--space-6) + 64px) var(--space-4) calc(var(--space-6) + 76px);
+    min-height: 100vh;
+  }
+
+  .container {
+    padding: 0;
+  }
+
+  .cards {
+    gap: 1rem;
+  }
+
+  .card {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(18px);
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 720px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: var(--space-4);
+    border-radius: 18px;
+  }
+
+  .main-content {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .mobile-brand {
+    font-size: 0.98rem;
+  }
+
+  .mobile-nav-item {
+    max-width: 72px;
+    font-size: 0.72rem;
+  }
+
+  .card {
+    border-radius: 20px;
+  }
+
+  .cards {
+    gap: 0.85rem;
+  }
+
+  .sidebar {
+    width: 100%;
   }
 }
 
