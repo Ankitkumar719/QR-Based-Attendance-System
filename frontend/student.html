@@ -8,26 +8,29 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
 </head>
-<body>
-  <div class="mobile-topbar">
+<body class="app-shell">
+  <div class="mobile-topbar mobile-navbar">
     <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open menu">☰</button>
     <div class="mobile-brand">Smart Attendance</div>
     <button id="mobileProfileBtn" class="mobile-profile-btn" aria-label="Profile">👤</button>
   </div>
-  <div class="sidebar">
-    <h2>Smart Attendance</h2>
-    <div class="sidebar-content">
-      <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
-      <button class="sidebar-btn" id="markAttendanceBtn">Mark Attendance</button>
-      <button class="sidebar-btn" id="viewAttendanceBtn">View Attendance</button>
-      <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
-      <button class="sidebar-btn" id="timeTableBtn">Time Table</button>
-    </div>
-    <button class="sidebar-btn" id="profileBtn">Profile</button>
-    <button id="logoutBtn">Logout</button>
-  </div>
+  <div class="app-shell__layout">
+    <aside class="desktop-sidebar sidebar">
+      <h2>Smart Attendance</h2>
+      <div class="sidebar-content">
+        <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
+        <button class="sidebar-btn" id="markAttendanceBtn">Mark Attendance</button>
+        <button class="sidebar-btn" id="viewAttendanceBtn">View Attendance</button>
+        <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
+        <button class="sidebar-btn" id="timeTableBtn">Time Table</button>
+      </div>
+      <button class="sidebar-btn" id="profileBtn">Profile</button>
+      <button id="logoutBtn">Logout</button>
+    </aside>
 
-  <div class="main-content">
+    <main class="app-shell__main">
+      <section class="desktop-dashboard">
+        <div class="main-content">
     <div class="container">
       <div id="dashboardView">
         <h3 style="color: #fff; margin-bottom: 20px;">📊 Student Dashboard</h3>
@@ -232,6 +235,8 @@
       </div>
 
     </div>
+      </section>
+    </main>
   </div>
 
   <script type="module" src="assets/js/student.js?v=20260526"></script>

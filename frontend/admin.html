@@ -7,30 +7,33 @@
   <link rel="stylesheet" href="assets/css/styles.css?v=20260526" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-  <div class="mobile-topbar">
+<body class="app-shell">
+  <div class="mobile-topbar mobile-navbar">
     <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Open menu">☰</button>
     <div class="mobile-brand">Smart Attendance</div>
     <button id="mobileProfileBtn" class="mobile-profile-btn" aria-label="Profile">👤</button>
   </div>
-  <div class="sidebar">
-    <h2>Smart Attendance</h2>
-    <div class="sidebar-content">
-      <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
-      <button class="sidebar-btn" id="createUserBtn">Manage Users</button>
-      <button class="sidebar-btn" id="departmentsBtn">Manage Departments</button>
-      <button class="sidebar-btn" id="sectionsBtn">Manage Sections</button>
-      <button class="sidebar-btn" id="coursesBtn">Manage Courses</button>
-      <button class="sidebar-btn" id="timetableBtn">Manage Timetable</button>
-      <button class="sidebar-btn" id="faceRegsBtn">Manage Face Registrations</button>
-      <button class="sidebar-btn" id="promoteBtn">Promote Students</button>
-      <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
-    </div>
-    <button class="sidebar-btn" id="profileBtn">Profile</button>
-    <button id="logoutBtn">Logout</button>
-  </div>
+  <div class="app-shell__layout">
+    <aside class="desktop-sidebar sidebar">
+      <h2>Smart Attendance</h2>
+      <div class="sidebar-content">
+        <button class="sidebar-btn active" id="dashboardBtn">Dashboard</button>
+        <button class="sidebar-btn" id="createUserBtn">Manage Users</button>
+        <button class="sidebar-btn" id="departmentsBtn">Manage Departments</button>
+        <button class="sidebar-btn" id="sectionsBtn">Manage Sections</button>
+        <button class="sidebar-btn" id="coursesBtn">Manage Courses</button>
+        <button class="sidebar-btn" id="timetableBtn">Manage Timetable</button>
+        <button class="sidebar-btn" id="faceRegsBtn">Manage Face Registrations</button>
+        <button class="sidebar-btn" id="promoteBtn">Promote Students</button>
+        <button class="sidebar-btn" id="analyticsBtn">Analytics</button>
+      </div>
+      <button class="sidebar-btn" id="profileBtn">Profile</button>
+      <button id="logoutBtn">Logout</button>
+    </aside>
 
-  <div class="main-content">
+    <main class="app-shell__main">
+      <section class="desktop-dashboard">
+        <div class="main-content">
     <div class="container">
       <div id="dashboardView">
         <h3 style="color: #fff; margin-bottom: 20px;">📊 Admin Dashboard</h3>
@@ -809,6 +812,8 @@
         </div>
       </div>
     </div>
+      </section>
+    </main>
   </div>
 
   <script type="module" src="assets/js/admin.js?v=20260526"></script>
