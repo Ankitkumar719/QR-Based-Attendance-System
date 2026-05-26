@@ -92,11 +92,16 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
 html {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 body {
@@ -107,7 +112,7 @@ body {
   color: var(--gray-100);
   min-height: 100vh;
   overflow-x: hidden;
-  max-width: 100vw;
+  max-width: 100%;
 }
 
 img,
@@ -318,12 +323,14 @@ button:disabled {
   position: fixed;
   inset: 0 auto 0 0;
   width: 260px;
+  max-width: 90vw;
   height: 100vh;
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
   overflow: hidden;
+  transition: transform var(--transition-base), opacity var(--transition-base);
 }
 
 .sidebar h2 {
@@ -372,13 +379,18 @@ button:disabled {
 
 .main-content {
   margin-left: 260px;
+  width: calc(100% - 260px);
+  max-width: 100%;
   min-height: 100vh;
   padding: var(--space-8);
+  min-width: 0;
 }
 
 .container {
+  width: 100%;
   max-width: 1100px;
   margin: 0 auto;
+  padding: 0 var(--space-2);
 }
 
 /* ============================================
@@ -388,6 +400,15 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-4);
+  min-width: 0;
+}
+
+.cards > * {
+  min-width: 0;
+}
+
+.card {
+  min-width: 0;
 }
 
 /* Dashboard specific 6-card layout */
@@ -446,8 +467,17 @@ label {
 }
 
 table {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
+  min-width: 0;
+}
+
+table th,
+table td {
+  min-width: 0;
 }
 
 th,
@@ -592,17 +622,40 @@ table.card td {
 
 @media (max-width: 1100px) {
   .sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translateX(-100%);
+    width: min(260px, 90vw);
+    max-width: 90vw;
+    height: 100vh;
+    padding: var(--space-5);
     border-radius: 0;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.25);
+    z-index: 60;
+    background: rgba(15, 23, 42, 0.98);
+    overflow-y: auto;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  body.sidebar-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 55;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .sidebar-content {
     max-height: none;
     overflow: visible;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
   .sidebar-btn,
@@ -612,6 +665,7 @@ table.card td {
 
   .main-content {
     margin-left: 0;
+    width: 100%;
     padding: var(--space-6);
   }
 }
@@ -672,7 +726,7 @@ table.card td {
   .card table {
     width: 100%;
     min-width: 0 !important;
-    overflow-x: hidden;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     table-layout: fixed;
   }
@@ -706,6 +760,10 @@ table.card td {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 
+  #adminTimetable {
+    min-width: 0 !important;
+  }
+
   #qrReader,
   #qrReader video,
   #qrReader iframe,
@@ -722,7 +780,7 @@ table.card td {
   .card,
   .auth-container,
   .modal-content {
-    max-width: 100vw !important;
+    max-width: 100% !important;
     overflow-x: hidden !important;
   }
 
