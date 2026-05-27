@@ -33,110 +33,110 @@
         <div class="main-content">
     <div class="container">
       <div id="dashboardView">
-        <h3 style="color: #fff; margin-bottom: 20px;">📊 Student Dashboard</h3>
+        <h3 class="section-gap text-white">📊 Student Dashboard</h3>
         
         <!-- Active Sessions Alert Banner -->
-        <div id="activeSessionBanner" style="display: none; background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; cursor: pointer;" onclick="switchView('mark')">
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <span style="font-size: 2rem;">🔔</span>
-            <div style="flex: 1;">
-              <strong style="color: #000; font-size: 1.1rem;">Active Attendance Session!</strong>
-              <p style="color: rgba(0,0,0,0.7); margin: 5px 0 0 0; font-size: 0.9rem;" id="activeSessionBannerText">Click to mark your attendance now</p>
+        <div id="activeSessionBanner" class="banner-card banner-warning section-gap hidden" onclick="switchView('mark')" role="button">
+          <div class="flex-between gap-xl">
+            <span class="text-white text-large">🔔</span>
+            <div class="flex-1">
+              <strong class="text-white text-large">Active Attendance Session!</strong>
+              <p id="activeSessionBannerText" class="text-muted text-small">Click to mark your attendance now</p>
             </div>
-            <span style="color: #000; font-size: 1.5rem;">→</span>
+            <span class="text-white text-large">→</span>
           </div>
         </div>
         
         <!-- Welcome Banner -->
-        <div class="card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card banner-card banner-success section-gap">
+          <div class="flex-between">
             <div>
-              <h2 style="margin: 0; color: #fff;">Welcome, <span id="studentNameDisplay">Student</span>!</h2>
-              <p style="color: rgba(255,255,255,0.8); margin-top: 5px;" id="studentInfoDisplay"></p>
+              <h2 class="text-white">Welcome, <span id="studentNameDisplay">Student</span>!</h2>
+              <p class="section-gap-sm text-muted" id="studentInfoDisplay"></p>
             </div>
-            <div style="text-align: right; color: rgba(255,255,255,0.9);">
-              <p style="margin: 0; font-size: 0.9rem;" id="currentDateStudent"></p>
-              <p style="margin: 0; font-size: 0.85rem;" id="currentDayStudent"></p>
+            <div class="text-right text-muted">
+              <p class="no-margin text-small" id="currentDateStudent"></p>
+              <p class="no-margin text-small" id="currentDayStudent"></p>
             </div>
           </div>
         </div>
         
-        <div class="cards" id="dashboardSummaryCards" style="margin-bottom: 30px;">
+        <div class="cards section-gap" id="dashboardSummaryCards">
           <!-- Overall summary cards will be generated here -->
         </div>
         
         <!-- Today's Attendance Verification Section -->
-        <div id="todayAttendanceSection" style="margin-bottom: 30px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4 style="color: #fff; margin: 0;">✅ Today's Attendance Verification</h4>
-            <button onclick="loadTodayAttendance()" style="padding: 8px 15px; font-size: 0.85rem; background: #444;">🔄 Refresh</button>
+        <div id="todayAttendanceSection" class="section-gap">
+          <div class="flex-between section-small">
+            <h4 class="text-white">✅ Today's Attendance Verification</h4>
+            <button onclick="loadTodayAttendance()" class="btn btn-secondary">🔄 Refresh</button>
           </div>
-          <div id="todayAttendanceList" class="card" style="padding: 0; overflow: hidden;">
-            <p style="color: #888; text-align: center; padding: 20px;">Loading...</p>
+            <div id="todayAttendanceList" class="card card-no-pad">
+              <p class="text-muted text-center panel-message">Loading...</p>
           </div>
         </div>
         
         <!-- Next Class & Today's Schedule -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+        <div  class="grid-2 gap-xl section-gap">
           <div id="upcomingClassView">
-            <h4 style="color: #fff; margin-bottom: 10px;">🎯 Current / Next Class</h4>
+            <h4 class="section-gap-sm text-white">🎯 Current / Next Class</h4>
             <div id="upcomingClassDetails" class="card"></div>
           </div>
           <div id="todayScheduleView">
-            <h4 style="color: #fff; margin-bottom: 10px;">📅 Today's Schedule</h4>
-            <div id="todaySchedule" class="card" style="max-height: 200px; overflow-y: auto;"></div>
+            <h4 class="section-gap-sm text-white">📅 Today's Schedule</h4>
+            <div id="todaySchedule" class="card panel-scroll"></div>
           </div>
         </div>
         
-        <h4 style="color: #fff; margin-bottom: 10px;">📚 Subject-wise Attendance</h4>
+        <h4 class="section-gap-sm text-white">📚 Subject-wise Attendance</h4>
         <div class="cards" id="subjectCards">
           <!-- Subject attendance cards will be generated here -->
         </div>
       </div>
 
-      <div id="markAttendanceView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 10px;">Mark Attendance</h3>
-        <p style="color: #aaa; font-size: 0.9rem; margin-bottom: 20px;">
+      <div id="markAttendanceView" class="hidden">
+        <h3 class="section-gap-sm text-white">Mark Attendance</h3>
+        <p class="section-gap text-muted text-small">
           Secure dual verification: <strong>Face</strong> first, then <strong>Faculty QR</strong>. Both are required.
         </p>
 
-        <div class="card" style="margin-bottom: 20px; padding: 15px;">
-          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div id="stepFaceStatus" style="flex: 1; min-width: 140px;">
-              <span style="color: #888;">Step 1 — Face</span>
-              <p id="stepFaceLabel" style="margin: 5px 0 0; font-weight: bold; color: #ffc107;">⏳ Pending</p>
+        <div class="card section-gap">
+          <div class="flex-wrap gap-xl">
+            <div id="stepFaceStatus" class="flex-1">
+              <span class="text-muted">Step 1 — Face</span>
+              <p id="stepFaceLabel" class="text-warning text-small">⏳ Pending</p>
             </div>
-            <div id="stepQrStatus" style="flex: 1; min-width: 140px; opacity: 0.5;">
-              <span style="color: #888;">Step 2 — QR</span>
-              <p id="stepQrLabel" style="margin: 5px 0 0; font-weight: bold; color: #666;">🔒 Locked</p>
+            <div id="stepQrStatus" class="flex-1 dimmed">
+              <span class="text-muted">Step 2 — QR</span>
+              <p id="stepQrLabel" class="text-muted text-small">🔒 Locked</p>
             </div>
           </div>
-          <p id="dualVerifyStatus" style="margin: 12px 0 0; font-size: 0.85rem; color: #888;"></p>
+          <p id="dualVerifyStatus" class="text-muted text-small"></p>
         </div>
 
         <!-- Active Sessions Section -->
-        <div id="activeSessionsSection" class="card" style="margin-bottom: 20px;">
-          <h4 style="color: #28a745; margin-bottom: 15px;">🟢 Active Attendance Sessions</h4>
+        <div id="activeSessionsSection" class="card section-gap">
+          <h4 class="section-gap-sm text-white">🟢 Active Attendance Sessions</h4>
           <div id="activeSessionsList">
-            <p style="color: #888;">Loading active sessions...</p>
+            <p class="text-muted">Loading active sessions...</p>
           </div>
         </div>
         
-        <div class="card" style="margin-bottom: 20px;">
-          <h4 style="color: #17a2b8; margin-bottom: 10px;">Step 1 — Verify Your Face</h4>
-          <p style="color: #888; font-size: 0.85rem; margin-bottom: 12px;">
+        <div class="card section-gap">
+          <h4 class="section-gap-sm text-white">Step 1 — Verify Your Face</h4>
+          <p class="section-gap text-muted text-small">
             Register your face in Profile first if you have not already.
           </p>
-          <button id="facialAttendanceBtn" type="button" style="background: #17a2b8; padding: 12px 30px; cursor: pointer;">
+          <button id="facialAttendanceBtn" type="button" class="btn-info">
             📷 Verify Face
           </button>
-          <video id="facialReader" style="width: 300px; height: 300px; margin-top: 10px; display: none; border-radius: 8px;"></video>
-          <p id="facialMsg" class="error-msg" style="margin-top: 10px;"></p>
+          <video id="facialReader" class="section-gap-sm hidden responsive-box"></video>
+          <p id="facialMsg" class="error-msg section-gap-sm"></p>
         </div>
 
-        <div id="qrStepCard" class="card" style="opacity: 0.45; pointer-events: none;">
-          <h4 style="color: #fff; margin-bottom: 15px;">Step 2 — Scan Faculty QR Code</h4>
-          <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div id="qrStepCard" class="card disabled-card">
+          <h4 class="section-gap-sm text-white">Step 2 — Scan Faculty QR Code</h4>
+          <div class="grid grid-2 gap-xl" >
             <div>
               <label>Enter QR Token</label>
               <input id="qrTokenInput" placeholder="Available after face verification..." disabled />
@@ -145,8 +145,8 @@
             </div>
             <div>
               <label>Or Scan QR Code</label>
-              <div id="qrReader" style="width: 300px; height: 300px; margin-top: 10px;"></div>
-              <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">
+              <div id="qrReader" class="section-gap-sm responsive-box"></div>
+              <p class="section-gap-sm text-muted text-small">
                 Scan the live QR shown by your faculty. Expired QRs are rejected automatically.
               </p>
             </div>
@@ -154,63 +154,59 @@
         </div>
       </div>
 
-      <div id="viewAttendanceView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 20px;">View Your Attendance</h3>
-        <form id="viewAttendanceForm" class="grid" style="grid-template-columns: 1fr auto; align-items: end;">
+      <div id="viewAttendanceView" class="hidden">
+        <h3 class="section-gap text-white">View Your Attendance</h3>
+        <form id="viewAttendanceForm" class="grid grid align-end" >
             <div class="form-group">
                 <label for="studentDate">Date</label>
                 <input type="date" id="studentDate" required>
             </div>
             <div class="form-group">
-                <button type="submit" style="width: auto; padding: 12px 30px;">Check Status</button>
+                <button type="submit" class="btn btn-primary">Check Status</button>
             </div>
         </form>
-        <table id="attendanceStatusTable" class="card" style="margin-top: 30px; text-align: center; display: none; width: 100%;">
+        <table id="attendanceStatusTable" class="card section-gap table-fill hidden text-center">
             <!-- Status will be shown here -->
         </table>
       </div>
 
-      <div id="timeTableView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 20px;">Your Time Table</h3>
+      <div id="timeTableView" class="hidden">
+        <h3 class="section-gap text-white">Your Time Table</h3>
         <table id="timeTable"></table>
       </div>
 
-      <div id="analyticsView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 20px;">Your Attendance Analytics</h3>
-        <div class="card" style="margin-bottom: 20px;">
+      <div id="analyticsView" class="hidden">
+        <h3 class="section-gap text-white">Your Attendance Analytics</h3>
+        <div class="card section-gap">
           <h4>📊 Your Attendance Summary</h4>
-          <div id="studentAnalyticsSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-top: 15px;">
-            <div style="text-align: center; padding: 15px; background: #2d2d2d; border-radius: 8px;">
-              <div style="font-size: 2rem; color: #28a745;">📈</div>
-              <div style="font-size: 1.5rem; font-weight: bold; color: #28a745;" id="overallAttendance">0%</div>
-              <div style="color: #888; font-size: 0.85rem;">Overall Attendance</div>
-            </div>
-            <div style="text-align: center; padding: 15px; background: #2d2d2d; border-radius: 8px;">
-              <div style="font-size: 2rem; color: #17a2b8;">✅</div>
-              <div style="font-size: 1.5rem; font-weight: bold; color: #17a2b8;" id="totalPresent">0</div>
-              <div style="color: #888; font-size: 0.85rem;">Days Present</div>
-            </div>
-            <div style="text-align: center; padding: 15px; background: #2d2d2d; border-radius: 8px;">
-              <div style="font-size: 2rem; color: #dc3545;">❌</div>
-              <div style="font-size: 1.5rem; font-weight: bold; color: #dc3545;" id="totalAbsent">0</div>
-              <div style="color: #888; font-size: 0.85rem;">Days Absent</div>
-            </div>
-            <div style="text-align: center; padding: 15px; background: #2d2d2d; border-radius: 8px;">
-              <div style="font-size: 2rem; color: #ffc107;">📅</div>
-              <div style="font-size: 1.5rem; font-weight: bold; color: #ffc107;" id="totalSessions">0</div>
-              <div style="color: #888; font-size: 0.85rem;">Total Sessions</div>
-            </div>
+          <div id="studentAnalyticsSummary"  class="grid gap-sm section-gap-sm">
+              <div class="card-stat">
+                <div class="stat-number" id="overallAttendance">0%</div>
+                <div class="stat-label">Overall Attendance</div>
+              </div>
+              <div class="card-stat">
+                <div class="stat-number" id="totalPresent">0</div>
+                <div class="stat-label">Days Present</div>
+              </div>
+              <div class="card-stat">
+                <div class="stat-number" id="totalAbsent">0</div>
+                <div class="stat-label">Days Absent</div>
+              </div>
+              <div class="card-stat">
+                <div class="stat-number" id="totalSessions">0</div>
+                <div class="stat-label">Total Sessions</div>
+              </div>
           </div>
         </div>
 
         <div class="card">
           <h4>📈 Monthly Attendance Trend</h4>
-          <canvas id="studentChart" style="max-width:100%; margin-top:15px;"></canvas>
+          <canvas id="studentChart" class="section-gap-sm max-w-full"></canvas>
         </div>
 
-        <div class="card" style="margin-top: 20px;">
+        <div class="card section-gap-sm">
           <h4>📋 Detailed Attendance Report</h4>
-          <form id="analyticsForm" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin: 15px 0;">
+          <form id="analyticsForm"  class="grid gap-sm align-end section-gap-sm">
             <div class="form-group">
               <label>From Date</label>
               <input type="date" id="anFromDate">
@@ -219,16 +215,16 @@
               <label>To Date</label>
               <input type="date" id="anToDate">
             </div>
-            <div class="form-group" style="align-self: end;">
-              <button type="submit" style="width: auto; padding: 12px 20px;">Load Report</button>
+            <div class="form-group align-self-end">
+              <button type="submit" class="btn btn-primary">Load Report</button>
             </div>
           </form>
-          <table id="analyticsTable" style="margin-top:15px;"></table>
+          <table id="analyticsTable"  class="section-gap-sm"></table>
         </div>
       </div>
 
-      <div id="profileView" style="display: none;">
-        <h3 style="color: #fff; margin-bottom: 20px;">Your Profile</h3>
+      <div id="profileView" class="hidden">
+        <h3 class="section-gap text-white">Your Profile</h3>
         <div class="card" id="profileDetails">
             <!-- Profile details will be generated here -->
         </div>
@@ -249,3 +245,5 @@
   </nav>
 </body>
 </html>
+
+
