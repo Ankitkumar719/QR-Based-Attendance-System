@@ -1,17 +1,24 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Smart Attendance - Login</title>
+  <title>Smart Attendance — Login</title>
   <link rel="stylesheet" href="assets/css/styles.css?v=20260526" />
 </head>
 <body class="auth-page">
-  <div class="auth-container">
-    <h1>Welcome!</h1>
-    <p class="subtitle">Sign in to continue to Smart Attendance</p>
-    <form id="loginForm">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">SA</div>
+      <div>
+        <h1 class="auth-title">Smart Attendance</h1>
+        <p class="auth-subtitle">Secure campus attendance for admin, faculty, and students.</p>
+      </div>
+    </div>
+
+    <form id="loginForm" class="auth-form">
       <div class="form-group">
+        <label for="role">I am a</label>
         <select id="role" required>
           <option value="" disabled selected>Select your role</option>
           <option value="admin">Admin</option>
@@ -20,13 +27,17 @@
         </select>
       </div>
       <div class="form-group">
-        <input type="email" id="email" placeholder="Email" required />
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="your@example.com" required />
       </div>
       <div class="form-group">
-        <input type="password" id="password" placeholder="Password" required />
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" required />
       </div>
-      <button type="submit">Login</button>
-      <p id="loginError" class="error-msg"></p>
+      <div class="auth-actions">
+        <button type="submit" class="btn btn-primary full-width">Sign in</button>
+      </div>
+      <p id="loginError" class="form-error"></p>
     </form>
   </div>
 

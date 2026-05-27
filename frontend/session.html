@@ -1,380 +1,246 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Active Session - Smart Attendance</title>
+  <title>Active Session — Smart Attendance</title>
   <link rel="stylesheet" href="assets/css/styles.css?v=20260526" />
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
-    
 </head>
-<body class="session-shell">
-  <!-- Top Navigation Bar -->
-  <div class="top-bar">
-    <div class="top-bar-left">
-      <div class="live-indicator">
-        <div class="live-dot"></div>
-        <span>LIVE</span>
-      </div>
-      <div class="class-name" id="className">Loading...</div>
-    </div>
-    <div class="top-bar-right">
-      <button class="btn-back" id="backBtn">← Back</button>
-      <button class="btn-end" id="endSessionBtn">⏹ End Session</button>
-    </div>
+<body class="session-app">
+  <div class="mobile-topbar session-navbar">
+    <button id="backBtn" class="mobile-menu-btn" aria-label="Back">←</button>
+    <div class="mobile-brand">Active Session</div>
+    <button id="endSessionBtn" class="mobile-profile-btn" aria-label="End Session">⏹</button>
   </div>
-  
-  <!-- Main Content -->
-  <div class="main-content">
-    <!-- Left Panel - QR & Stats -->
-    <div class="left-panel">
-      <div class="qr-container">
-        <canvas id="qrCanvas" width="280" height="280"></canvas>
-      </div>
-      
-      <div class="token-box">
-        <div class="token-label">Session Token</div>
-        <div class="token-value" id="tokenDisplay"></div>
-        <button class="copy-btn" id="copyTokenBtn">📋 Copy Token</button>
-      </div>
-      
-      <div class="session-details">
-        <p><span>Session ID:</span> <strong id="sessionId">-</strong></p>
-        <p><span>Expires at:</span> <strong id="expiresAt">-</strong></p>
-      </div>
-      
-      <div class="live-stats">
-        <div class="stat-card present">
-          <div class="stat-number" id="presentCount">0</div>
-          <div class="stat-label">Present</div>
+  <header class="desktop-topbar session-topbar">
+    <div class="topbar-brand">Active Session</div>
+    <div class="topbar-actions">
+      <button id="backBtnDesktop" class="topbar-btn">← Back</button>
+      <button id="endSessionBtnDesktop" class="btn btn-danger">End Session</button>
+    </div>
+  </header>
+
+  <main class="dashboard-content session-content">
+    <div class="session-grid">
+      <section class="panel-card session-overview">
+        <div class="flex-between">
+          <div>
+            <div class="session-status">LIVE</div>
+            <h2 class="section-title">Attendance QR & Status</h2>
+          </div>
+          <div class="text-muted text-small">Keep this tab visible during your session.</div>
         </div>
-        <div class="stat-card absent">
-          <div class="stat-number" id="absentCount">0</div>
-          <div class="stat-label">Absent</div>
+
+        <div class="grid-2 gap-lg">
+          <div class="panel-card card-secondary">
+            <canvas id="qrCanvas" width="280" height="280"></canvas>
+          </div>
+          <div class="panel-card card-secondary section-gap">
+            <div>
+              <p class="text-muted text-small uppercase">Session Token</p>
+              <div class="stat-value" id="tokenDisplay">—</div>
+            </div>
+            <button class="btn btn-info full-width" id="copyTokenBtn">Copy Token</button>
+            <div class="live-stats grid gap-sm">
+              <div class="session-stat">
+                <div class="stat-value" id="presentCount">0</div>
+                <div class="stat-label">Present</div>
+              </div>
+              <div class="session-stat">
+                <div class="stat-value" id="absentCount">0</div>
+                <div class="stat-label">Absent</div>
+              </div>
+              <div class="session-stat">
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="stat-card total">
-          <div class="stat-number" id="totalCount">0</div>
-          <div class="stat-label">Total</div>
+
+        <div class="panel-card card-secondary section-gap">
+          <div class="grid gap-sm">
+            <div class="form-group">
+              <label>Session ID</label>
+              <div id="sessionId" class="text-muted">-</div>
+            </div>
+            <div class="form-group">
+              <label>Expires At</label>
+              <div id="expiresAt" class="text-muted">-</div>
+            </div>
+          </div>
+          <p id="expiresWarning" class="text-warning"></p>
         </div>
-      </div>
-      
-      <p class="expires-warning" id="expiresWarning"></p>
-      
-      <!-- Recent Attendance Feed -->
-      <div class="recent-feed">
-        <div class="recent-feed-header">
-          <div class="pulse-dot"></div>
-          <span>Live Attendance Feed</span>
+      </section>
+
+      <section class="panel-card session-feed">
+        <div class="flex-between">
+          <h2 class="section-title">Live Attendance Feed</h2>
+          <span class="text-muted text-small">Updates in real time</span>
         </div>
-        <div class="recent-feed-list" id="recentFeedList">
+        <div class="live-feed-list" id="recentFeedList">
           <div class="feed-empty">Waiting for students to mark attendance...</div>
         </div>
-      </div>
+      </section>
     </div>
-    
-    <!-- Right Panel - Students List -->
-    <div class="right-panel">
-      <div class="students-header">
-        <h2>📋 Student Attendance</h2>
-        <div class="filter-tabs" id="filterTabs">
-          <!-- Filter tabs will be injected by JS -->
+
+    <section class="panel-card students-panel">
+      <div class="flex-between">
+        <h2 class="section-title">Student Attendance</h2>
+        <div class="filter-tabs" id="filterTabs"></div>
+      </div>
+      <div class="table-responsive">
+        <div class="students-grid" id="studentsList">
+          <div class="empty-state">Loading students...</div>
         </div>
       </div>
-      <div class="students-grid" id="studentsList">
-        <div class="empty-state">Loading students...</div>
-      </div>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script type="module">
     import { apiGet, apiPost, ensureAuth } from "./assets/js/api.js?v=20260526";
-    
+
     ensureAuth(["faculty"]);
-    
-    // Get session data from URL or localStorage
+
     const params = new URLSearchParams(window.location.search);
     const sessionId = params.get('sessionId') || localStorage.getItem('currentSessionId');
     const qrToken = params.get('qrToken') || localStorage.getItem('currentQrToken');
     const className = params.get('className') || localStorage.getItem('currentClassName') || 'Active Session';
     const expiresAt = params.get('expiresAt') || localStorage.getItem('currentExpiresAt');
-    
+
+    const backBtn = document.getElementById('backBtn');
+    const endSessionBtn = document.getElementById('endSessionBtn');
+    const backBtnDesktop = document.getElementById('backBtnDesktop');
+    const endSessionBtnDesktop = document.getElementById('endSessionBtnDesktop');
+
+    const navigateBack = () => window.location.href = 'faculty.html';
+    backBtn?.addEventListener('click', navigateBack);
+    backBtnDesktop?.addEventListener('click', navigateBack);
+    endSessionBtn?.addEventListener('click', navigateBack);
+    endSessionBtnDesktop?.addEventListener('click', navigateBack);
+
     if (!sessionId || !qrToken) {
       alert('No active session found');
       window.location.href = 'faculty.html';
     }
-    
-    // Display session info
-    document.getElementById('className').textContent = decodeURIComponent(className);
+
+    document.querySelector('.mobile-brand').textContent = className;
+    document.querySelector('.topbar-brand').textContent = className;
     document.getElementById('sessionId').textContent = sessionId;
     document.getElementById('expiresAt').textContent = expiresAt ? new Date(expiresAt).toLocaleTimeString() : '-';
-    
-    // Generate QR Code
+
     new QRious({
       element: document.getElementById('qrCanvas'),
       value: qrToken,
       size: 280,
       level: 'H'
     });
-    
-    // Display token for manual entry
+
     document.getElementById('tokenDisplay').textContent = qrToken;
-    
-    // Copy token button
+
     document.getElementById('copyTokenBtn').addEventListener('click', () => {
       navigator.clipboard.writeText(qrToken).then(() => {
         const btn = document.getElementById('copyTokenBtn');
         btn.textContent = '✅ Copied!';
-        setTimeout(() => { btn.textContent = '📋 Copy Token'; }, 2000);
-      }).catch(err => {
-        alert('Failed to copy. Token: ' + qrToken);
+        setTimeout(() => { btn.textContent = 'Copy Token'; }, 2000);
+      }).catch(() => {
+        alert('Failed to copy token.');
       });
     });
-    
-    // Update expiry warning
+
     function updateExpiryWarning() {
       if (!expiresAt) return;
       const now = new Date();
       const expiry = new Date(expiresAt);
       const diff = expiry - now;
-      
+      const warning = document.getElementById('expiresWarning');
       if (diff <= 0) {
-        document.getElementById('expiresWarning').textContent = '⚠️ Session has expired!';
-        document.getElementById('expiresWarning').style.color = '#dc3545';
+        warning.textContent = '⚠️ Session has expired';
       } else if (diff < 5 * 60 * 1000) {
-        const mins = Math.floor(diff / 60000);
-        document.getElementById('expiresWarning').textContent = `⚠️ Expires in ${mins} minute(s)`;
+        warning.textContent = `⚠️ Expires in ${Math.ceil(diff / 60000)} min`;
       }
     }
+
     updateExpiryWarning();
     setInterval(updateExpiryWarning, 30000);
-    
-    // Load students for attendance management
+
     let allStudents = [];
     let currentFilter = 'all';
-    
+
     async function loadStudents() {
       try {
-const data = await apiGet(`/api/faculty/session/${sessionId}/students`);
-        allStudents = data.students;
-        
-        // Update counts
+        const data = await apiGet(`/api/faculty/session/${sessionId}/students`);
+        allStudents = data.students || [];
         document.getElementById('presentCount').textContent = data.presentCount || 0;
         document.getElementById('absentCount').textContent = data.absentCount || 0;
-        document.getElementById('totalCount').textContent = data.totalStudents;
-        
+        document.getElementById('totalCount').textContent = data.totalStudents || allStudents.length;
         renderStudentList();
       } catch (err) {
-        console.error('Error loading students:', err);
-        document.getElementById('studentsList').innerHTML = '<p class="error-msg panel-message">Error loading students</p>';
+        document.getElementById('studentsList').innerHTML = '<div class="panel-message">Error loading students</div>';
+        console.error(err);
       }
     }
-    
+
     function renderStudentList() {
       const container = document.getElementById('studentsList');
-      const filterTabsContainer = document.getElementById('filterTabs');
-      
-      // Filter students based on current filter
-      let filteredStudents = allStudents;
-      if (currentFilter === 'present') {
-        filteredStudents = allStudents.filter(s => s.status === 'present');
-      } else if (currentFilter === 'absent') {
-        filteredStudents = allStudents.filter(s => s.status === 'absent');
-      }
-      
-      if (allStudents.length === 0) {
-        container.innerHTML = '<div class="empty-state">No students found</div>';
-        filterTabsContainer.innerHTML = '';
-        return;
-      }
-      
-      // Build filter tabs
+      const filterTabs = document.getElementById('filterTabs');
       const presentCount = allStudents.filter(s => s.status === 'present').length;
       const absentCount = allStudents.filter(s => s.status === 'absent').length;
-      
-      filterTabsContainer.innerHTML = `
+      filterTabs.innerHTML = `
         <button class="filter-tab ${currentFilter === 'all' ? 'active' : ''}" data-filter="all">All (${allStudents.length})</button>
         <button class="filter-tab ${currentFilter === 'present' ? 'active' : ''}" data-filter="present">Present (${presentCount})</button>
         <button class="filter-tab ${currentFilter === 'absent' ? 'active' : ''}" data-filter="absent">Absent (${absentCount})</button>
       `;
-      
-      // Add filter tab listeners
-      filterTabsContainer.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          currentFilter = tab.dataset.filter;
+      filterTabs.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentFilter = btn.dataset.filter;
           renderStudentList();
         });
       });
-      
-      if (filteredStudents.length === 0) {
+      const filtered = allStudents.filter(student => {
+        if (currentFilter === 'present') return student.status === 'present';
+        if (currentFilter === 'absent') return student.status === 'absent';
+        return true;
+      });
+      if (!filtered.length) {
         container.innerHTML = '<div class="empty-state">No students in this category</div>';
-      } else {
-        container.innerHTML = filteredStudents.map(s => `
-          <div class="student-card" data-student-id="${s.id}">
-            <div class="student-info">
-              <div class="roll-no">${s.rollNo || 'N/A'}</div>
-              <div class="name">${s.name}</div>
-            </div>
-            <span class="status-badge ${s.status}">${s.status}</span>
-            <div class="toggle-btns">
-              <button class="toggle-btn btn-p ${s.status === 'present' ? 'active' : ''}" data-student-id="${s.id}" data-status="present" title="Mark Present">P</button>
-              <button class="toggle-btn btn-a ${s.status === 'absent' ? 'active' : ''}" data-student-id="${s.id}" data-status="absent" title="Mark Absent">A</button>
-            </div>
-          </div>
-        `).join('');
+        return;
       }
-      
-      // Add toggle button listeners
+      container.innerHTML = filtered.map(student => `
+        <div class="student-card">
+          <div class="student-info">
+            <div class="roll-no">${student.rollNo || 'N/A'}</div>
+            <div class="name">${student.name || 'Unknown student'}</div>
+          </div>
+          <span class="status-badge ${student.status}">${student.status || 'unknown'}</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn ${student.status === 'present' ? 'active' : ''}" data-student-id="${student.id}" data-status="present">P</button>
+            <button class="toggle-btn ${student.status === 'absent' ? 'active' : ''}" data-student-id="${student.id}" data-status="absent">A</button>
+          </div>
+        </div>
+      `).join('');
       container.querySelectorAll('.toggle-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
           const studentId = btn.dataset.studentId;
           const newStatus = btn.dataset.status;
-          
+          btn.disabled = true;
           try {
-            btn.disabled = true;
-            const result = await apiPost('/api/faculty/manual-attendance', {
-              sessionId,
-              studentId,
-              status: newStatus
-            });
-            
-            // Update local data
+            await apiPost('/api/faculty/manual-attendance', { sessionId, studentId, status: newStatus });
             const student = allStudents.find(s => s.id === studentId);
-            if (student) {
-              student.status = newStatus;
-              student.alreadyMarked = true;
-            }
-            
-            // Update counts
-            const presentCount = allStudents.filter(s => s.status === 'present').length;
-            const absentCount = allStudents.filter(s => s.status === 'absent').length;
-            document.getElementById('presentCount').textContent = presentCount;
-            document.getElementById('absentCount').textContent = absentCount;
-            
-            // Re-render
+            if (student) student.status = newStatus;
             renderStudentList();
           } catch (err) {
-            console.error('Error updating attendance:', err);
-            alert('Failed to update: ' + (err.message || 'Unknown error'));
+            alert('Unable to update attendance');
+            console.error(err);
           } finally {
             btn.disabled = false;
           }
         });
       });
     }
-    
+
     loadStudents();
-    
-    // Track students who mark attendance (for live feed)
-    let previousPresentStudents = new Set();
-    let recentAttendance = []; // Store recent attendance marks with timestamps
-    
-    function updateLiveFeed() {
-      const feedList = document.getElementById('recentFeedList');
-      
-      // Find newly present students
-      const currentPresentStudents = allStudents.filter(s => s.status === 'present');
-      
-      currentPresentStudents.forEach(student => {
-        if (!previousPresentStudents.has(student.id)) {
-          // This student just marked attendance
-          recentAttendance.unshift({
-            id: student.id,
-            name: student.name,
-            rollNo: student.rollNo,
-            time: new Date()
-          });
-        }
-      });
-      
-      // Keep only last 20 entries
-      recentAttendance = recentAttendance.slice(0, 20);
-      
-      // Update the previous set
-      previousPresentStudents = new Set(currentPresentStudents.map(s => s.id));
-      
-      // Render feed
-      if (recentAttendance.length === 0) {
-        feedList.innerHTML = '<div class="feed-empty">Waiting for students to mark attendance...</div>';
-      } else {
-        feedList.innerHTML = recentAttendance.map(item => {
-          const timeStr = item.time.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            second: '2-digit'
-          });
-          return `
-            <div class="feed-item">
-              <span class="icon">✅</span>
-              <div class="details">
-                <div class="name">${item.name}</div>
-                <div class="roll">${item.rollNo || 'N/A'}</div>
-              </div>
-              <div class="time">${timeStr}</div>
-            </div>
-          `;
-        }).join('');
-      }
-    }
-    
-    // Initialize the feed with existing present students
-    async function initializeFeed() {
-      // Wait for first load
-      await loadStudents();
-      
-      // Mark all current present students as already known
-      const currentPresentStudents = allStudents.filter(s => s.status === 'present');
-      previousPresentStudents = new Set(currentPresentStudents.map(s => s.id));
-      
-      // Show them in feed (without animation effect for existing ones)
-      currentPresentStudents.forEach(student => {
-        recentAttendance.push({
-          id: student.id,
-          name: student.name,
-          rollNo: student.rollNo,
-          time: new Date() // We don't have actual time, so use current
-        });
-      });
-      
-      // Limit and render
-      recentAttendance = recentAttendance.slice(0, 20);
-      updateLiveFeed();
-    }
-    
-    // Refresh and check for new attendance
-    async function refreshAndUpdate() {
-      await loadStudents();
-      updateLiveFeed();
-    }
-    
-    // Initialize
-    initializeFeed();
-    
-    // Refresh counts every 10 seconds (faster for live updates)
-    setInterval(refreshAndUpdate, 10000);
-    
-    // End session button
-    document.getElementById('endSessionBtn').addEventListener('click', async () => {
-      if (!confirm('Are you sure you want to end this session?')) return;
-      
-      try {
-        await apiPost(`/api/faculty/end-session/${sessionId}`);
-        localStorage.removeItem('currentSessionId');
-        localStorage.removeItem('currentQrToken');
-        localStorage.removeItem('currentClassName');
-        localStorage.removeItem('currentExpiresAt');
-        alert('Session ended successfully!');
-        window.location.href = 'faculty.html';
-      } catch (err) {
-        alert('Failed to end session: ' + (err.message || 'Unknown error'));
-      }
-    });
-    
-    // Back button
-    document.getElementById('backBtn').addEventListener('click', () => {
-      window.location.href = 'faculty.html';
-    });
   </script>
 </body>
 </html>
-
-
