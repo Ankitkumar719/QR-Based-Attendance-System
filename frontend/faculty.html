@@ -3,8 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Faculty Dashboard - Smart Attendance</title>
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260527" />
+  <link rel="stylesheet" data-versionable data-href="assets/css/styles.css" />
+  <script>
+    const APP_VERSION = String(Date.now());
+    window.APP_VERSION = APP_VERSION;
+    const styleLink = document.querySelector('link[data-versionable][data-href]');
+    if (styleLink) {
+      const href = new URL(styleLink.dataset.href, window.location.href);
+      href.searchParams.set('v', APP_VERSION);
+      styleLink.href = href;
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
@@ -210,8 +223,15 @@
     </main>
   </div>
 
-  <script type="module" src="assets/js/faculty.js?v=20260527"></script>
-  <script type="module" src="assets/js/mobile-nav.js?v=20260527"></script>
+  <script type="module" data-versionable data-src="assets/js/faculty.js"></script>
+  <script type="module" data-versionable data-src="assets/js/mobile-nav.js"></script>
+  <script>
+    document.querySelectorAll('script[data-versionable][data-src]').forEach((el) => {
+      const src = new URL(el.dataset.src, window.location.href);
+      src.searchParams.set('v', APP_VERSION);
+      el.src = src;
+    });
+  </script>
   <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
     <button type="button" class="mobile-nav-item" data-target="dashboardBtn"><span>🏠</span><span>Dashboard</span></button>
     <button type="button" class="mobile-nav-item" data-target="timeTableBtn"><span>📚</span><span>Classes</span></button>
