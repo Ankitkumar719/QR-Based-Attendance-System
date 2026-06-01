@@ -545,7 +545,6 @@ export const startSession = async (req, res, next) => {
 
     res.status(201).json({
       id: session._id,
-      const { classId, latitude, longitude, accuracy } = req.body;
       qrToken: session.qrToken,
       createdAt: session.createdAt,
       expiresAt: session.expiresAt,
@@ -801,6 +800,7 @@ export const manualMarkAttendance = async (req, res, next) => {
  * Returns all students with current status for viewing and modifying
  */
 export const getSessionStudents = async (req, res, next) => {
+  try {
     const { classId, courseCode, courseName, department, semester, section, latitude, longitude, accuracy } = req.body;
     const { sessionId } = req.params;
 
