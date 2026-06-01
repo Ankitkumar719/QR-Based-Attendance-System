@@ -4,6 +4,10 @@ import { Class } from "../models/Class.js";
 import { AttendanceSession } from "../models/AttendanceSession.js";
 import { AttendanceRecord } from "../models/AttendanceRecord.js";
 
+const escapeRegExp = (value) => {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 // GET /analytics/student — personal attendance analytics for logged-in student
 export const studentAnalytics = async (req, res, next) => {
   try {
@@ -92,13 +96,17 @@ export const studentAnalytics = async (req, res, next) => {
 // GET /analytics/report
 export const report = async (req, res, next) => {
   try {
-    const { department, semester, section, courseCode } = req.query;
+    const { department, semester, section, courseCode, courseName } = req.query;
 
     const classFilter = {};
     if (department) classFilter.department = department;
     if (semester) classFilter.semester = semester;
     if (section) classFilter.section = section;
-    if (courseCode) classFilter.courseCode = courseCode;
+    if (courseCode) classFilter.courseCode = new RegExp(`^${escapeRegExp(courseCode)}$`, "i");
+    if (courseName) classFilter.courseName = new RegExp(`^${escapeRegExp(courseName)}$`, "i");
+    if (req.user?.role === "faculty") {
+      classFilter.facultyId = req.user._id;
+    }
 
     const classes = await Class.find(classFilter).lean();
     const classIds = classes.map((c) => c._id);
@@ -166,6 +174,11 @@ export const report = async (req, res, next) => {
         : 0;
       return {
         class: cls,
+        courseCode: cls.courseCode,
+        courseName: cls.courseName,
+        department: cls.department,
+        semester: cls.semester,
+        section: cls.section,
         totalClassesConducted: aggC.sessions,
         totalMarked: aggC.total,
         presentCount: aggC.presents,
@@ -185,13 +198,17 @@ export const exportCsv = async (req, res, next) => {
   try {
     // Reuse report data
     req.query = req.query || {};
-    const { department, semester, section, courseCode } = req.query;
+    const { department, semester, section, courseCode, courseName } = req.query;
 
     const classFilter = {};
     if (department) classFilter.department = department;
     if (semester) classFilter.semester = semester;
     if (section) classFilter.section = section;
-    if (courseCode) classFilter.courseCode = courseCode;
+    if (courseCode) classFilter.courseCode = new RegExp(`^${escapeRegExp(courseCode)}$`, "i");
+    if (courseName) classFilter.courseName = new RegExp(`^${escapeRegExp(courseName)}$`, "i");
+    if (req.user?.role === "faculty") {
+      classFilter.facultyId = req.user._id;
+    }
 
     const classes = await Class.find(classFilter).lean();
     const classIds = classes.map((c) => c._id);

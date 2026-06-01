@@ -10,15 +10,15 @@
   --surface-soft: rgba(15, 23, 42, 0.65);
   --panel: rgba(10, 18, 33, 0.95);
   --panel-soft: rgba(255, 255, 255, 0.04);
-  --border: rgba(148, 163, 184, 0.14);
-  --border-strong: rgba(148, 163, 184, 0.24);
+  --border: rgba(255, 0, 0, 0.5);
+  --border-strong: rgba(255, 0, 0, 0.8);
   --text: #e4e9f2;
   --muted: #94a3b8;
-  --accent: #60a5fa;
-  --accent-2: #38bdf8;
+  --accent: #FF0000;
+  --accent-2: #FFFF00;
   --success: #22c55e;
-  --warning: #fbbf24;
-  --danger: #f97316;
+  --warning: #FFFF00;
+  --danger: #FF0000;
   --radius: 24px;
   --radius-sm: 16px;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
@@ -49,7 +49,24 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  border: 8px solid red !important;
+}
+
+/* DEPLOY TEST v1 Badge */
+body::before {
+  content: 'DEPLOY TEST v1';
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: #FF0000;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
+  border: 2px solid #FFFF00;
 }
 
 img, svg, video {
@@ -118,8 +135,8 @@ textarea::placeholder {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+  border-color: rgba(255, 0, 0, 0.8);
+  box-shadow: 0 0 0 4px rgba(255, 0, 0, 0.2);
 }
 
 hr {
@@ -145,13 +162,14 @@ hr {
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #0ea5e9);
-  box-shadow: 0 18px 40px rgba(56, 189, 248, 0.18);
+  background: linear-gradient(135deg, #FF0000, #FF3333);
+  box-shadow: 0 18px 40px rgba(255, 0, 0, 0.4);
 }
 
 .btn-secondary {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.08);
+  color: #000;
+  background: #FFFF00;
+  font-weight: 700;
 }
 
 .btn-success {
@@ -166,7 +184,7 @@ hr {
 
 .btn-info {
   color: #fff;
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  background: linear-gradient(135deg, #FF0000, #FF3333);
 }
 
 .btn-action {
@@ -238,8 +256,8 @@ hr {
   display: inline-flex;
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
-  background: rgba(56, 189, 248, 0.14);
-  color: #7dd3fc;
+  background: rgba(255, 0, 0, 0.3);
+  color: #FF0000;
   font-size: 0.92rem;
   font-weight: 700;
 }
@@ -293,14 +311,16 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   padding: 1rem 1rem;
-  background: rgba(7, 11, 20, 0.92);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: #FF0000;
+  border-bottom: 3px solid #FFFF00;
   backdrop-filter: blur(18px);
+  color: #fff;
 }
 
 .mobile-topbar .mobile-brand {
   font-weight: 800;
   letter-spacing: -0.03em;
+  color: #fff;
 }
 
 .mobile-menu-btn,
@@ -460,11 +480,11 @@ body.sidebar-open::before {
 
 .sidebar-btn:hover,
 .sidebar-btn.active {
-  background: rgba(56, 189, 248, 0.12);
+  background: rgba(255, 0, 0, 0.3);
 }
 
 .sidebar-btn.active {
-  color: #fff;
+  color: #FF0000;
 }
 
 .sidebar button#logoutBtn {
@@ -497,7 +517,7 @@ body.sidebar-open::before {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: rgba(7, 11, 20, 0.92);
+  background: #FF0000;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   backdrop-filter: blur(18px);
 }
@@ -547,7 +567,7 @@ body.sidebar-open::before {
 .card,
 .panel-card {
   background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 3px solid #FF0000;
   border-radius: var(--radius);
   padding: 1.5rem;
   box-shadow: var(--shadow-soft);
@@ -592,7 +612,8 @@ body.sidebar-open::before {
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
   font-size: 0.78rem;
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(255, 0, 0, 0.3);
+  color: #FF0000;
 }
 
 .quick-actions-grid {
@@ -678,8 +699,8 @@ body.sidebar-open::before {
 }
 
 .mobile-bottom-nav .mobile-nav-item.active {
-  background: rgba(56, 189, 248, 0.16);
-  color: #fff;
+  background: rgba(255, 0, 0, 0.4);
+  color: #FF0000;
 }
 
 .hidden {
