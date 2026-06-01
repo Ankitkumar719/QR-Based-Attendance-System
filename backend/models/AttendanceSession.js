@@ -12,6 +12,23 @@ const attendanceSessionSchema = new mongoose.Schema(
       required: true,
       unique: true
     },
+    // Faculty location where session was created
+    latitude: {
+      type: Number,
+      required: false
+    },
+    longitude: {
+      type: Number,
+      required: false
+    },
+    accuracy: {
+      type: Number,
+      required: false
+    },
+    radius: {
+      type: Number,
+      default: 30
+    },
     createdAt: {
       type: Date,
       default: () => new Date()

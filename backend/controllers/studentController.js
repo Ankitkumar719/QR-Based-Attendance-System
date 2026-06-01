@@ -4,6 +4,7 @@ import { AttendanceSession } from "../models/AttendanceSession.js";
 import { AttendanceRecord } from "../models/AttendanceRecord.js";
 import { FaceVerification } from "../models/FaceVerification.js";
 import { sendLowAttendanceEmail } from "../utils/mailer.js";
+import { calculateDistance } from "../utils/geofence.js";
 
 export const myClasses = async (req, res, next) => {
   try {
@@ -126,7 +127,7 @@ export const studentDashboard = async (req, res, next) => {
 // POST /student/mark-attendance — dual verification (face token + live QR)
 export const markAttendance = async (req, res, next) => {
   try {
-    const { qrToken, faceVerificationToken } = req.body;
+    const { qrToken, faceVerificationToken, latitude, longitude, accuracy } = req.body;
     const studentId = req.user._id;
 
     if (!qrToken || typeof qrToken !== "string" || !qrToken.trim()) {
@@ -163,6 +164,40 @@ export const markAttendance = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid or expired QR session" });
     }
 
+    // Location validation
+    if (latitude === undefined || longitude === undefined || accuracy === undefined) {
+      return res.status(400).json({ success: false, message: "Location permission required" });
+    }
+
+    const latNum = Number(latitude);
+    const lngNum = Number(longitude);
+    const accNum = Number(accuracy);
+
+    if (!isFinite(latNum) || !isFinite(lngNum) || !isFinite(accNum)) {
+      return res.status(400).json({ success: false, message: "Invalid location data" });
+    }
+    if (latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+      return res.status(400).json({ success: false, message: "Invalid location data" });
+    }
+    if (accNum > 20) {
+      return res.status(400).json({ success: false, message: "Location accuracy too low" });
+    }
+
+    // Session must have location
+    if (session.latitude === undefined || session.longitude === undefined) {
+      console.warn("markAttendance: session missing location", { sessionId: session._id });
+      return res.status(400).json({ success: false, message: "Session location missing" });
+    }
+
+    // Calculate distance between student and session
+    const distance = calculateDistance(latNum, lngNum, session.latitude, session.longitude);
+    if (distance === null) {
+      return res.status(400).json({ success: false, message: "Invalid location data" });
+    }
+    if (distance > (session.radius || 30)) {
+      return res.status(403).json({ success: false, message: "You are outside the classroom area" });
+    }
+
     const { department, semester, section } = req.user;
     const studentClasses = await Class.find({ department, semester, section }).select("_id");
     const classIds = studentClasses.map((c) => c._id.toString());
@@ -183,10 +218,20 @@ export const markAttendance = async (req, res, next) => {
     }
 
     try {
+      const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").toString().split(",")[0].trim();
+      const userAgent = req.get("User-Agent") || "";
+
       const record = await AttendanceRecord.create({
         sessionId: session._id,
         studentId,
         status: "present",
+        latitude: latNum,
+        longitude: lngNum,
+        accuracy: accNum,
+        distanceFromSession: Math.round(distance),
+        markedAt: new Date(),
+        ipAddress,
+        userAgent
       });
 
       const io = req.app.get("io");

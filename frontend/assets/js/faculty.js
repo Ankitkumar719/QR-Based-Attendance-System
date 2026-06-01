@@ -691,6 +691,26 @@ async function startAutoSession(slotData) {
           section: slotData.section
         };
     
+    // Capture faculty geolocation before starting session
+    const geo = await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+    }).catch(err => null);
+
+    if (!geo || !geo.coords) {
+      alert('Location permission required to start session');
+      return;
+    }
+    const { latitude, longitude, accuracy } = geo.coords;
+    if (accuracy > 10) {
+      alert('Location accuracy is too low. Please move to an open area and try again.');
+      return;
+    }
+
+    payload.latitude = latitude;
+    payload.longitude = longitude;
+    payload.accuracy = accuracy;
+
     const response = await apiPost("/api/faculty/auto-session", payload);
     
     // Build class name for display

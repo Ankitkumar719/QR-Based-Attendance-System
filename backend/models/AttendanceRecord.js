@@ -25,6 +25,15 @@ const attendanceRecordSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Additional location & audit fields for geofence + anti-spoofing
+attendanceRecordSchema.add({
+  latitude: { type: Number },
+  longitude: { type: Number },
+  accuracy: { type: Number },
+  distanceFromSession: { type: Number },
+  markedAt: { type: Date }
+});
+
 attendanceRecordSchema.index({ sessionId: 1, studentId: 1 }, { unique: true });
 
 export const AttendanceRecord = mongoose.model(
