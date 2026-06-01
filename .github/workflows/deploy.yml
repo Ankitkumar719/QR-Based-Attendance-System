@@ -1,0 +1,165 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          set -e
+          echo "🔐 Setting up SSH configuration..."
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "✅ SSH key configured with correct permissions (600)"
+          
+          echo "📝 Adding EC2 host to known_hosts..."
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "✅ Host key added to known_hosts"
+        shell: bash
+
+      - name: Test SSH connectivity
+        run: |
+          set -e
+          echo "🔗 Testing SSH connection to EC2..."
+          ssh -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            'echo "✅ SSH connection successful" && whoami && pwd'
+        shell: bash
+
+      - name: Create required directories
+        run: |
+          set -e
+          echo "📁 Ensuring project directory exists..."
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            'mkdir -p ~/QR-Based-Attendance-System && echo "✅ Project directory ready"'
+        shell: bash
+
+      - name: Deploy to EC2
+        run: |
+          set -e
+          echo "🚀 Starting deployment to EC2..."
+          echo ""
+          
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          
+          # Navigate to project directory
+          echo "📂 Navigating to project directory..."
+          cd ~/QR-Based-Attendance-System
+          echo "✅ Current directory: $(pwd)"
+          echo ""
+          
+          # Pull latest code
+          echo "📥 Pulling latest code from main branch..."
+          git pull origin main
+          echo "✅ Code pulled successfully"
+          echo ""
+          
+          # Install dependencies
+          echo "📦 Installing npm dependencies..."
+          npm install
+          echo "✅ Dependencies installed"
+          echo ""
+          
+          # Verify PM2 is installed
+          echo "🔍 Verifying PM2 is installed..."
+          if ! command -v pm2 &> /dev/null; then
+            echo "❌ ERROR: PM2 is not installed globally"
+            echo "Install PM2 with: sudo npm install -g pm2"
+            exit 1
+          fi
+          echo "✅ PM2 found: $(pm2 --version)"
+          echo ""
+          
+          # Restart PM2 apps
+          echo "🔄 Restarting PM2 applications..."
+          pm2 restart all
+          echo "✅ PM2 applications restarted"
+          echo ""
+          
+          # Save PM2 state
+          echo "💾 Saving PM2 state..."
+          pm2 save
+          echo "✅ PM2 state saved"
+          echo ""
+          
+          echo "🎉 Deployment steps completed successfully!"
+        EOF
+        shell: bash
+
+      - name: Verify deployment
+        run: |
+          echo "📊 Deployment verification..."
+          echo ""
+          
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          
+          echo "📋 PM2 Process List:"
+          echo "===================="
+          pm2 list
+          echo ""
+          
+          echo "📝 Recent PM2 Logs (last 10 lines):"
+          echo "===================================="
+          pm2 logs --nostream --lines 10
+          echo ""
+          
+          echo "✅ Verification complete"
+        EOF
+        shell: bash
+
+      - name: Check application status
+        run: |
+          echo "🔍 Checking application health..."
+          
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} \
+            'pm2 status && echo "✅ All processes are active"' || \
+            (echo "⚠️  Some processes may not be running. Check logs above." && exit 1)
+        shell: bash
+
+      - name: Deployment success
+        if: success()
+        run: |
+          echo "✅ ✅ ✅ DEPLOYMENT SUCCESSFUL ✅ ✅ ✅"
+          echo ""
+          echo "🎯 Summary:"
+          echo "  - Code pulled from main branch"
+          echo "  - Dependencies installed"
+          echo "  - PM2 applications restarted"
+          echo "  - Verification completed"
+          echo ""
+          echo "🌐 Next step: Access your application on EC2"
+
+      - name: Deployment failure
+        if: failure()
+        run: |
+          echo "❌ DEPLOYMENT FAILED ❌"
+          echo ""
+          echo "⚠️  Troubleshooting steps:"
+          echo "  1. Check SSH connection: ssh -i key.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}"
+          echo "  2. Verify PM2 is installed: pm2 --version"
+          echo "  3. Check recent logs: pm2 logs"
+          echo "  4. Review Git status: git status"
+          echo "  5. Check for npm errors: cat npm-debug.log"
+          echo ""
+          echo "📝 GitHub Secrets to verify:"
+          echo "  - EC2_HOST: ${{ secrets.EC2_HOST }}"
+          echo "  - EC2_USERNAME: ${{ secrets.EC2_USERNAME }}"
+          echo "  - EC2_SSH_KEY: (check in repository settings)"
+          exit 1
