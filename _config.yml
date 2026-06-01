@@ -1,0 +1,14 @@
+# GitHub Pages / Jekyll configuration to exclude large or irrelevant folders
+# This prevents Jekyll from attempting to render files inside node_modules
+exclude:
+  - backend/node_modules
+  - backend
+  - ml
+  - .github
+  - node_modules
+
+# Optional: keep safe defaults to avoid processing README.md inside packages
+safe: true
+
+# Keep permalink style minimal during the pages build (optional)
+permalink: /:path/
