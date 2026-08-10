@@ -1,0 +1,561 @@
+AI ATTENDANCE SYSTEM FOR QUALITY EDUCATION
+OLD REPORT CHANGE GUIDE
+
+Use this file to update the old Minor Project-I report according to the new Minor Project-II format.
+
+============================================================
+1. COVER PAGE
+============================================================
+
+Change:
+MINOR PROJECT-I REPORT -> MINOR PROJECT-II REPORT
+December - 2025 -> June 2026
+GROUP NO.48 -> GROUP NO.29
+Prof. Nitin Jain -> Prof. Dipti Jain
+SMART ATTENDANCE SYSTEM -> AI Attendance System for Quality Education
+
+Use these member details:
+Anuj Kumar        0187CS231047
+Ankit Kumar       0187CS231040
+Aditya Kumar      0187CS231017
+Ankit Srivastav   0187CS231042
+
+============================================================
+2. CERTIFICATE
+============================================================
+
+Change old certificate title line to:
+
+We hereby certify that the work which is being presented in the B.Tech. Minor Project-II Report entitled AI ATTENDANCE SYSTEM FOR QUALITY EDUCATION, in partial fulfillment of the requirements for the award of the degree of Bachelor of Technology, submitted to the Department of Computer Science & Engineering, Sagar Institute of Science & Technology (SISTec), Bhopal (M.P.) is an authentic record of our own work carried out during the period from Jan-2026 to Jun-2026 under the supervision of Prof. Dipti Jain.
+
+Keep:
+Prof. Dipti Jain - Project Guide
+Prof. Nargish Gupta - HOD, CSE
+Dr. Manish Billore - Principal
+
+Fill Date before submission.
+
+============================================================
+3. ACKNOWLEDGEMENT
+============================================================
+
+Only change guide name:
+
+Prof. Nitin Jain -> Prof. Dipti Jain
+
+Keep the same acknowledgement format as the new Minor-2 file.
+
+============================================================
+4. ABSTRACT
+============================================================
+
+Replace old abstract with:
+
+"AI Attendance System for Quality Education" is a web-based attendance management solution developed to automate and secure the process of student attendance in educational institutions. The system enables faculty members to generate time-limited QR codes during class sessions, which students scan using their registered devices to mark attendance. The updated system also includes face recognition, geofence validation, real-time attendance tracking, and ML-based attendance shortage prediction. This approach reduces manual effort, prevents proxy attendance, and ensures accurate record keeping. The system incorporates role-based authentication for administrators, faculty, and students, along with secure data storage, attendance reports, analytics, face registration management, and ML model retraining.
+
+This project is aligned with SDG 4 - Quality Education, the project supports the adoption of sustainable digital practices in educational institutions through a secure, scalable, and technology-driven attendance management system.
+
+============================================================
+5. TABLE OF CONTENTS
+============================================================
+
+Keep the same chapter sequence as the new format:
+
+Abstract
+List of Abbreviations
+List of Figures
+List of Tables
+Chapter 1 Introduction
+Chapter 2 Software & Hardware Requirements
+Chapter 3 Problem Description
+Chapter 4 Literature Survey
+Chapter 5 Software Requirements Specification
+Chapter 6 Software and Hardware Design
+Chapter 7 ML Module
+Chapter 8 Coding
+Chapter 9 Result and Output Screens
+Chapter 10 Conclusion and Future Work
+References
+Project Summary
+Appendix-1 Glossary of Terms
+
+Update page numbers after final formatting.
+
+============================================================
+6. CHAPTER 1 INTRODUCTION
+============================================================
+
+About Project:
+
+The AI Attendance System for Quality Education is a web-based application developed to automate the attendance process in educational institutions using QR code technology, face recognition, geofence validation, and machine learning. It replaces manual attendance registers with a digital, secure, and efficient mechanism.
+
+The system supports three primary users:
+Admin - Manages users, departments, courses, schedules, reports, face registrations, and ML operations
+Faculty - Creates attendance sessions, generates QR codes, monitors attendance, and views reports
+Student - Marks attendance, verifies face, views timetable, and checks attendance statistics
+
+Project Objectives:
+
+To eliminate manual attendance marking
+To prevent proxy attendance
+To provide real-time attendance tracking
+To enable secure role-based authentication
+To generate analytical reports for administrators
+To add face recognition-based student verification
+To predict attendance shortage using machine learning
+To improve efficiency and accuracy in attendance management
+
+============================================================
+7. CHAPTER 2 SOFTWARE & HARDWARE REQUIREMENTS
+============================================================
+
+Software Requirements:
+
+Node.js - Backend runtime
+Express.js - Web framework
+MongoDB - NoSQL database
+Mongoose - MongoDB ODM
+HTML, CSS, JavaScript - Frontend
+Chart.js - Data visualization
+QRious - QR code generation
+Socket.IO - Real-time updates
+Python - ML and face recognition support
+Flask - ML prediction API
+pandas, scikit-learn, pymongo, joblib - ML model development
+OpenCV, face-recognition, Pillow, NumPy - Face recognition module
+
+Hardware Requirements:
+
+Processor - Intel i3 or higher
+RAM - 4 GB minimum
+Storage - 20 GB free space
+Devices - Smartphone or laptop with camera
+Internet - Required
+
+============================================================
+8. CHAPTER 3 PROBLEM DESCRIPTION
+============================================================
+
+Replace with:
+
+Manual attendance systems face several challenges such as inaccurate data entry, time consumption, and proxy attendance. Maintaining attendance records for large classes becomes difficult, and generating reports requires additional effort.
+
+The lack of a centralized digital system also makes it hard to track attendance trends and student participation. The AI Attendance System for Quality Education addresses these problems by providing an automated, secure, and efficient attendance management solution with QR attendance, face verification, geofence validation, real-time tracking, and ML-based shortage prediction.
+
+============================================================
+9. CHAPTER 4 LITERATURE SURVEY
+============================================================
+
+Replace/add:
+
+Several existing attendance systems use biometric authentication, RFID cards, QR codes, or mobile applications. However:
+
+Biometric systems are costly
+RFID systems require extra hardware
+Mobile apps require installation and compatibility
+Simple QR systems need additional validation to prevent proxy attendance
+
+The proposed system uses a QR-based approach because it is lightweight, cost-effective, and easily deployable using existing devices. Face recognition, geofence validation, and ML-based attendance shortage prediction make the system more secure and useful for quality education.
+
+============================================================
+10. CHAPTER 5 SOFTWARE REQUIREMENTS SPECIFICATION
+============================================================
+
+Functional Requirements:
+
+User authentication and authorization
+QR code generation for attendance sessions
+Attendance marking via QR scan
+Face registration and face verification
+Geofence-based attendance validation
+Real-time attendance tracking
+Attendance report generation
+Student and faculty management
+ML-based attendance shortage prediction
+Admin-based ML model retraining
+
+Non-Functional Requirements:
+
+System must be secure
+High availability
+Scalability
+Maintainability
+Fast response time
+Support multiple concurrent users
+
+Security:
+
+JWT-based authentication
+Password hashing using bcrypt
+Role-based access control
+Device and location verification
+Face verification token
+Unique attendance record per session
+
+Usability:
+
+Simple user interface
+Mobile-friendly design
+Easy navigation
+
+============================================================
+11. CHAPTER 6 SOFTWARE AND HARDWARE DESIGN
+============================================================
+
+System Architecture:
+
+The system follows a 3-tier architecture:
+
+1. Presentation Layer - HTML, CSS, and JavaScript frontend
+2. Application Layer - Node.js and Express.js backend
+3. Database Layer - MongoDB database
+
+Additional services include a Python face-recognition worker and a Flask-based ML prediction service.
+
+Database Design:
+
+Main collections:
+User
+Department
+Section
+Course
+Class
+FacultySchedule
+TimeTable
+AttendanceSession
+AttendanceRecord
+FaceVerification
+FaceRegistrationLog
+
+Diagrams to update:
+
+Use Case Diagram
+ER Diagram
+System Architecture Diagram
+ML Pipeline Diagram
+
+============================================================
+12. CHAPTER 7 ML MODULE
+============================================================
+
+Replace old ML section with:
+
+Objective of the ML Module:
+
+The primary objective of introducing Machine Learning into the AI Attendance System for Quality Education is to analyze attendance data and predict attendance shortage risk. The ML module helps faculty and administrators identify students who may fall below the required attendance percentage.
+
+The ML module aims to:
+Identify attendance patterns
+Predict attendance shortage risk
+Detect irregular attendance behavior
+Assist faculty and administrators in early intervention
+Support data-driven academic decision-making
+
+Data Collection:
+
+The system stores structured attendance data that can be used as input for Machine Learning models. The collected dataset may include:
+
+Student identification details
+Course and class information
+Date and time of attendance
+Attendance status
+Historical attendance percentage
+Absent days
+
+ML Implementation:
+
+The ML service is implemented using Python and Flask. It uses pandas and scikit-learn for feature processing and model training. The backend communicates with the ML service for shortage prediction and retraining.
+
+Important files:
+ml/app.py
+ml/train_model.py
+ml/train_core.py
+ml/features.py
+backend/routes/mlRoutes.js
+backend/controllers/mlController.js
+backend/controllers/mlAdminController.js
+backend/utils/mlPredictClient.js
+backend/utils/mlTrainClient.js
+
+Important ML endpoints:
+GET /health
+GET /training/status
+POST /train
+POST /predict
+POST /api/ml/predict-shortage
+POST /api/admin/ml/retrain
+
+Face Recognition Add-on:
+
+The project also includes a Python-based face recognition module. It stores student face descriptors and verifies students during attendance to improve security and reduce proxy attendance.
+
+Important files:
+backend/ml/face_worker.py
+backend/ml/face_recognition_service.py
+backend/utils/facePythonClient.js
+
+============================================================
+13. CHAPTER 8 CODING
+============================================================
+
+Keep the same format as the new report, but update code/module explanation with these project files:
+
+Backend:
+backend/server.js
+backend/config/env.js
+backend/config/db.js
+backend/routes/authRoutes.js
+backend/routes/adminRoutes.js
+backend/routes/facultyRoutes.js
+backend/routes/studentRoutes.js
+backend/routes/mlRoutes.js
+backend/controllers/
+backend/models/
+backend/middleware/authMiddleware.js
+backend/utils/
+
+Frontend:
+frontend/index.html
+frontend/admin.html
+frontend/faculty.html
+frontend/student.html
+frontend/session.html
+frontend/assets/js/
+frontend/assets/css/styles.css
+
+ML and Face:
+ml/app.py
+ml/train_model.py
+ml/features.py
+backend/ml/face_worker.py
+backend/ml/face_recognition_service.py
+
+Important API examples:
+
+POST /api/auth/login
+POST /api/faculty/auto-session
+POST /api/student/mark-attendance
+POST /api/ml/register-face
+POST /api/ml/verify-face
+POST /api/ml/predict-shortage
+POST /api/admin/ml/retrain
+
+============================================================
+14. CHAPTER 9 RESULT AND OUTPUT SCREENS
+============================================================
+
+Update result section with:
+
+Login Page
+Admin Dashboard
+Faculty Dashboard
+Faculty QR Code Generation Screen
+Student Attendance Marking Screen
+Face Registration / Verification Screen
+ML Attendance Shortage Prediction Output
+Attendance Report / Analytics Screen
+
+Admin Output:
+Manage users, departments, sections, courses, classes, schedules, reports, face registrations, and ML retraining.
+
+Faculty Output:
+View timetable, start session, generate QR code, monitor attendance, mark manual attendance, and view reports.
+
+Student Output:
+Scan QR, mark attendance, verify face, view timetable, view attendance history, and check attendance status.
+
+============================================================
+15. CHAPTER 10 CONCLUSION AND FUTURE WORK
+============================================================
+
+Conclusion:
+
+The AI Attendance System for Quality Education successfully provides a secure and efficient solution for attendance management in educational institutions. The system improves the traditional attendance process by using QR code-based attendance, face verification, location validation, role-based access, real-time tracking, and ML-based shortage prediction.
+
+The updated project is more advanced than the earlier version because it not only marks attendance digitally but also helps prevent proxy attendance and identify students who may face attendance shortage. Thus, the project reduces manual effort, improves accuracy, increases transparency, and supports quality education.
+
+Future Work:
+
+Mobile application development
+Push notifications for low attendance alerts
+Improved face liveness detection
+Parent or mentor dashboard
+Bulk Excel import/export
+SMS and email alerts
+Advanced analytics dashboard
+College ERP or LMS integration
+
+============================================================
+16. REFERENCES
+============================================================
+
+Use/update these references:
+
+https://nodejs.org/en/docs
+https://expressjs.com
+https://www.mongodb.com/docs
+https://jwt.io/introduction
+https://socket.io/docs
+https://flask.palletsprojects.com
+https://scikit-learn.org/stable/
+https://pypi.org/project/face-recognition/
+https://www.w3schools.com
+
+Keep book references:
+Pressman, R.S. (2010), Software Engineering: A Practitioner's Approach, McGraw-Hill.
+Sommerville, I. (2016), Software Engineering, Pearson Education.
+
+============================================================
+17. PROJECT SUMMARY
+============================================================
+
+About Project:
+
+AI Attendance System for Quality Education is a web-based application developed to automate the traditional attendance process followed in educational institutions. The manual attendance system is time-consuming, prone to errors, and allows proxy attendance. This project addresses these issues by providing a secure, accurate, and efficient attendance solution using QR code technology, face verification, geofence validation, real-time tracking, and ML-based shortage prediction.
+
+Tools & Technologies:
+
+Programming language used:
+JavaScript, HTML5, CSS3, Python
+
+Compiler/runtime used:
+Node.js Runtime v18.x and Python 3.x
+
+IDE used:
+Visual Studio Code
+
+Front End Technologies:
+HTML5, CSS3, JavaScript, Chart.js, QRious
+
+Back End Technologies:
+Node.js, Express.js, JWT, bcryptjs, Mongoose, Socket.IO, Axios, Nodemailer
+
+ML and Face Technologies:
+Python, Flask, pandas, scikit-learn, pymongo, joblib, OpenCV, face-recognition, Pillow, NumPy
+
+Database used:
+MongoDB
+
+Software Design & Coding:
+
+Is prototype developed?
+Yes, a working prototype was developed and tested before final implementation.
+
+SDLC model followed:
+Agile Model
+
+Why Agile?
+Agile allows incremental development, continuous testing, and faster feedback. The project was improved module by module, including authentication, student management, faculty scheduling, attendance marking, face verification, and ML prediction.
+
+Software Design approach:
+Object-Oriented and MVC-based approach
+
+Diagrams developed:
+Use Case Diagram, ER Diagram, Sequence Diagram, Flowchart, Activity Diagram, ML Pipeline Diagram
+
+No. of Tiers:
+3-Tier Architecture
+1. Presentation Layer
+2. Application Layer
+3. Database Layer
+
+Total no. of front-end pages:
+5 pages - Login, Admin Dashboard, Faculty Dashboard, Student Dashboard, Session Page
+
+Total no. of database collections:
+11 collections - User, Department, Section, Course, Class, FacultySchedule, TimeTable, AttendanceSession, AttendanceRecord, FaceVerification, FaceRegistrationLog
+
+Project Requirements:
+
+Database normal form:
+3rd Normal Form style logical design
+
+Are entries encrypted?
+Yes. Passwords are hashed using bcrypt and sessions are managed using JWT.
+
+Front end validations applied:
+Yes
+
+Session management done:
+Yes - using JWT
+
+Browser compatible:
+Yes - Chrome, Firefox, Edge, and modern browsers
+
+Exception handling done:
+Yes
+
+Commenting done in code:
+Yes
+
+Naming convention followed:
+Yes
+
+Difficulties faced during deployment:
+MongoDB connection configuration, JWT secret setup, CORS configuration, Python dependency setup for face recognition, ML service availability, and environment variable management.
+
+Use cases:
+User Login
+Student Registration
+Admin Manage Departments
+Admin Manage Courses
+Admin Manage Students
+Faculty View Timetable
+Faculty Start Attendance Session
+Student Mark Attendance via QR
+Student Face Verification
+ML Attendance Shortage Prediction
+View Attendance Reports
+
+Testing:
+
+Which testing is performed?
+Manual Testing
+
+Is Beta testing done?
+Yes
+
+Project narrative:
+
+AI Attendance System for Quality Education is a web-based application developed to automate the traditional attendance process followed in educational institutions. The project follows MVC-2 architecture and uses a 3-tier structure consisting of frontend, backend, and database layers. The system involves three actors: Admin, Faculty, and Student.
+
+The admin manages departments, courses, sections, students, faculty schedules, face registrations, reports, and ML retraining. Faculty can view timetables, start attendance sessions, generate QR codes, and monitor attendance. Students can scan QR codes, verify face, and view attendance records.
+
+The project is developed using the Agile SDLC model. Security and reliability are improved using JWT-based session management, bcrypt password hashing, role-based access control, face verification, location validation, and proper exception handling. Overall, the system reduces manual effort, improves accuracy, prevents proxy attendance, and supports SDG 4 - Quality Education.
+
+============================================================
+18. APPENDIX-1 GLOSSARY OF TERMS
+============================================================
+
+Add these new glossary terms:
+
+Face Recognition:
+A technology used to identify or verify a student using facial features.
+
+Geofence:
+A virtual location boundary used to check whether the student is near the attendance session location.
+
+Machine Learning:
+A technique that allows the system to learn from attendance data and predict shortage risk.
+
+Socket.IO:
+A real-time communication library used to update attendance sessions instantly.
+
+Shortage Prediction:
+The process of predicting whether a student may fall below the required attendance percentage.
+
+============================================================
+19. FINAL QUICK CHECKLIST
+============================================================
+
+Before final submission, check:
+
+Project name changed everywhere
+Group number changed to 29
+All four members added
+Guide name changed to Prof. Dipti Jain
+Duration changed to Jan-2026 to Jun-2026
+Abstract kept short like old format
+ML and face recognition added in relevant chapters
+Project Summary updated
+Page numbers updated after final formatting
