@@ -16,6 +16,9 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          passphrase: ${{ secrets.EC2_SSH_PASSPHRASE }}
+          timeout: 30
           script: |
             cd ~/QR-Based-Attendance-System
             git pull origin main
