@@ -20,7 +20,16 @@ jobs:
           passphrase: ${{ secrets.EC2_SSH_PASSPHRASE }}
           timeout: 30s
           script: |
+            echo "=== SSH connected ==="
+            echo "User: $(whoami)"
+            echo "Home: $HOME"
+            pwd
+            ls -la
+            echo "=== Change to repo directory ==="
             cd ~/QR-Based-Attendance-System
+            pwd
+            ls -la
+            echo "=== Deploy commands ==="
             git pull origin main
             npm install
             pm2 restart all
