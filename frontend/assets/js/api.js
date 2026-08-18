@@ -1,7 +1,14 @@
 const API_PREFIX = "/api/";
 
+const getApiBaseUrl = () => {
+  const configured = window.__APP_API_BASE__ || "";
+  return configured.replace(/\/+$/, "");
+};
+
 const toSameOriginApiPath = (path, query) => {
-  const url = new URL(path, window.location.origin);
+  const base = getApiBaseUrl();
+  const target = base ? `${base}/` : `${window.location.origin}/`;
+  const url = new URL(path, target);
 
   if (query && typeof query === "object") {
     Object.entries(query).forEach(([key, value]) => {
@@ -11,7 +18,7 @@ const toSameOriginApiPath = (path, query) => {
     });
   }
 
-  return `${url.pathname}${url.search}${url.hash}`;
+  return url.toString();
 };
 
 export const getToken = () => sessionStorage.getItem("token");
