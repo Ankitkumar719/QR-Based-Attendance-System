@@ -9,22 +9,21 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Node deps (backend)
-COPY backend/package.json backend/package-lock.json ./backend/
+# Install backend dependencies first for a predictable build.
+COPY backend/package*.json ./backend/
 RUN cd backend && npm ci --omit=dev
 
-# Python deps (face worker uses ml/requirements.txt)
+# Install Python ML deps required by the face/ML pipeline.
 COPY ml/requirements.txt ./ml/requirements.txt
 RUN python3 -m pip install --no-cache-dir -r ml/requirements.txt
 
-# App sources
+# Copy the actual app source tree.
 COPY backend ./backend
 COPY frontend ./frontend
 COPY ml ./ml
 
 ENV NODE_ENV=production
-WORKDIR /app/backend
 EXPOSE 5000
 
-CMD ["node", "server.js"]
+CMD ["node", "backend/server.js"]
 
