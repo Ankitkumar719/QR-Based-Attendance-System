@@ -510,26 +510,9 @@ async function handleMarkAttendance(token) {
   if (markBtn) markBtn.disabled = true;
 
   try {
-    // Capture student geolocation before submitting
-    const geo = await new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return resolve(null);
-      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-    }).catch(err => null);
-
-    if (!geo || !geo.coords) {
-      throw { message: "Location permission required" };
-    }
-    const { latitude, longitude, accuracy } = geo.coords;
-    if (accuracy > 20) {
-      throw { message: "Location accuracy too low" };
-    }
-
     await apiPost("/api/student/mark-attendance", {
       qrToken: token,
       faceVerificationToken: dualVerifyState.faceVerificationToken,
-      latitude,
-      longitude,
-      accuracy
     });
     markMsg.style.color = "green";
     markMsg.textContent = "Attendance marked (face + QR verified)!";

@@ -691,26 +691,6 @@ async function startAutoSession(slotData) {
           section: slotData.section
         };
     
-    // Capture faculty geolocation before starting session
-    const geo = await new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return resolve(null);
-      navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-    }).catch(err => null);
-
-    if (!geo || !geo.coords) {
-      alert('Location permission required to start session');
-      return;
-    }
-    const { latitude, longitude, accuracy } = geo.coords;
-    if (accuracy > 10) {
-      alert('Location accuracy is too low. Please move to an open area and try again.');
-      return;
-    }
-
-    payload.latitude = latitude;
-    payload.longitude = longitude;
-    payload.accuracy = accuracy;
-
     const response = await apiPost("/api/faculty/auto-session", payload);
     
     // Build class name for display
@@ -1274,17 +1254,13 @@ async function loadFacultyAnalytics() {
     
     // Set up form submission
     const analyticsForm = document.getElementById("analyticsForm");
-    if (analyticsForm) {
-      analyticsForm.removeEventListener("submit", handleAnalyticsSubmit);
-      analyticsForm.addEventListener("submit", handleAnalyticsSubmit);
-    }
-
+    analyticsForm?.addEventListener("submit", handleAnalyticsSubmit);
+    
     // Set up export button
     const exportBtn = document.getElementById("exportCsvBtn");
-    if (exportBtn) {
-      exportBtn.removeEventListener("click", exportAnalyticsCsv);
-      exportBtn.addEventListener("click", exportAnalyticsCsv);
-    }
+    exportBtn?.addEventListener("click", exportAnalyticsCsv);
+    
+  } catch (error) {
     console.error("Error loading faculty analytics:", error);
   }
 }
@@ -1297,17 +1273,17 @@ async function handleAnalyticsSubmit(e) {
   const filters = {
     semester: formData.get("anSemester") || undefined,
     section: formData.get("anSection") || undefined,
-    courseCode: formData.get("anCourseName") || undefined
+    courseName: formData.get("anCourseName") || undefined
   };
   
   try {
     const response = await apiGet("/api/analytics/report", filters);
     
     // Display chart
-    displayFacultyChart(response);
+    displayFacultyChart(response.data);
     
     // Display table
-    displayAnalyticsTable(response);
+    displayAnalyticsTable(response.data);
     
   } catch (error) {
     console.error("Error loading analytics:", error);
@@ -1317,20 +1293,14 @@ async function handleAnalyticsSubmit(e) {
 
 // Display faculty analytics chart
 function displayFacultyChart(data) {
-  const ctx = document.getElementById("facultyChart");
-  if (!ctx) return;
-  const chartCtx = ctx.getContext("2d");
+  const ctx = document.getElementById("facultyChart").getContext("2d");
   
   // Prepare data for chart
-  const labels = data.map(item => `${item.courseCode || item.class?.courseCode || "N/A"} - ${item.section || item.class?.section || "N/A"}`);
-  const presentData = data.map(item => item.presentCount || 0);
-  const absentData = data.map(item => item.absentCount || 0);
+  const labels = data.map(item => `${item.courseCode} - ${item.section}`);
+  const presentData = data.map(item => item.present || 0);
+  const absentData = data.map(item => item.absent || 0);
   
-  if (window.facultyChart) {
-    window.facultyChart.destroy();
-  }
-
-  window.facultyChart = new Chart(chartCtx, {
+  new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
@@ -1375,7 +1345,6 @@ function displayFacultyChart(data) {
 // Display analytics table
 function displayAnalyticsTable(data) {
   const table = document.getElementById("analyticsTable");
-  if (!table) return;
   
   if (!data || data.length === 0) {
     table.innerHTML = "<tr><td colspan='6' style='text-align: center;'>No data available</td></tr>";
@@ -1396,22 +1365,16 @@ function displayAnalyticsTable(data) {
   `;
   
   const rows = data.map(item => {
-    const present = item.presentCount ?? 0;
-    const absent = item.absentCount ?? 0;
-    const total = present + absent;
-    const percentage = total > 0 ? ((present / total) * 100).toFixed(1) : "0.0";
-    const courseCode = item.courseCode || item.class?.courseCode || "N/A";
-    const courseName = item.courseName || item.class?.courseName || "N/A";
-    const section = item.section || item.class?.section || "N/A";
-    const semester = item.semester || item.class?.semester || "N/A";
-
+    const total = (item.present || 0) + (item.absent || 0);
+    const percentage = total > 0 ? ((item.present || 0) / total * 100).toFixed(1) : 0;
+    
     return `
       <tr>
-        <td>${courseCode} - ${courseName}</td>
-        <td>${section}</td>
-        <td>${semester}</td>
-        <td>${present}</td>
-        <td>${absent}</td>
+        <td>${item.courseCode} - ${item.courseName}</td>
+        <td>${item.section}</td>
+        <td>${item.semester}</td>
+        <td>${item.present || 0}</td>
+        <td>${item.absent || 0}</td>
         <td>${percentage}%</td>
       </tr>
     `;
@@ -1423,17 +1386,18 @@ function displayAnalyticsTable(data) {
 // Export analytics to CSV
 async function exportAnalyticsCsv() {
   try {
-    const form = document.getElementById("analyticsForm");
-    const formData = new FormData(form);
-    const params = new URLSearchParams();
-    const semester = formData.get("anSemester");
-    const section = formData.get("anSection");
-    const courseCode = formData.get("anCourseName");
-    if (semester) params.append("semester", semester);
-    if (section) params.append("section", section);
-    if (courseCode) params.append("courseCode", courseCode);
-
-    await apiDownload(`/api/analytics/export?${params.toString()}`, "faculty_analytics.csv");
+    const response = await apiGet("/api/analytics/export");
+    
+    // Create and download CSV file
+    const blob = new Blob([response], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "faculty_analytics.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
     
   } catch (error) {
     console.error("Error exporting CSV:", error);
