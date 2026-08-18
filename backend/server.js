@@ -25,12 +25,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // CORS CONFIG
-const allowedOrigins = [
+const parseOrigins = (value) => {
+  if (!value) return [];
+  return String(value)
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+};
+
+const configuredOrigins = [
+  env.FRONTEND_URL,
+  process.env.FRONTEND_URL,
+  process.env.RENDER_EXTERNAL_URL,
+  process.env.RENDER_URL,
+  ...parseOrigins(process.env.ALLOWED_ORIGINS),
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://attendsmart.in",
   "https://attendsmart.in"
-];
+].filter(Boolean);
+
+const allowedOrigins = [...new Set(configuredOrigins.map((origin) => origin.replace(/\/$/, "")))];
 
 app.use(
   cors({
